@@ -1,237 +1,28 @@
-# xXx Cleaner - Easy Edition
-# Standalone: Run as Administrator, opens browser automatically
-# NAPSE-Aware | Silent | No dependencies
+# xXx Cleaner - Web Edition
+# Backend Engine: License + HWID + Discord + Ocean Check + NAPSE + Auto-Launch UI
 
 param(
     [string]$Action = "",
     [string]$Mode = "standard",
-    [switch]$NoBrowser
+    [string]$LicenseKey = "",
+    [switch]$ValidateLicense,
+    [switch]$NoBrowser,
+    [switch]$ServerOnly
 )
 
 $ErrorActionPreference = "SilentlyContinue"
 $ProgressPreference = "SilentlyContinue"
 
 # ============================================
-# EMBEDDED HTML UI (served via built-in web server)
+# CONFIGURATION
 # ============================================
-$HtmlUI = @'
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>xXx Cleaner</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: #0a0a0a;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #e0e0e0;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .bg {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(ellipse at 20% 50%, rgba(147,112,219,0.03) 0%, transparent 50%),
-                        radial-gradient(ellipse at 80% 50%, rgba(147,112,219,0.03) 0%, transparent 50%),
-                        linear-gradient(135deg, #0a0a0a 0%, #111 50%, #0a0a0a 100%);
-            z-index: -1;
-        }
-        .container {
-            width: 520px;
-            background: rgba(15,15,15,0.95);
-            border: 1px solid rgba(147,112,219,0.3);
-            border-radius: 8px;
-            box-shadow: 0 0 0 1px rgba(147,112,219,0.1), 0 20px 60px rgba(0,0,0,0.8), 0 0 40px rgba(147,112,219,0.05);
-            padding: 0; position: relative; overflow: hidden;
-        }
-        .header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 12px 20px;
-            background: rgba(147,112,219,0.05);
-            border-bottom: 1px solid rgba(147,112,219,0.1);
-        }
-        .logo { font-size: 18px; font-weight: 700; color: #9370db; letter-spacing: 2px; text-shadow: 0 0 10px rgba(147,112,219,0.3); }
-        .window-controls { display: flex; gap: 8px; align-items: center; }
-        .stream-mode { font-size: 10px; color: #666; margin-right: 8px; letter-spacing: 1px; }
-        .close-btn { width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,0.1); cursor: pointer; }
-        .close-btn:hover { background: rgba(255,100,100,0.5); }
-        .content { padding: 24px 20px; }
-        .title { text-align: center; font-size: 14px; font-weight: 600; color: #e0e0e0; margin-bottom: 16px; letter-spacing: 1px; }
-        .dropdown {
-            width: 100%; padding: 10px 14px; background: rgba(30,30,30,0.8);
-            border: 1px solid rgba(147,112,219,0.2); border-radius: 6px;
-            color: #e0e0e0; font-size: 12px; cursor: pointer; margin-bottom: 20px;
-            outline: none;
-        }
-        .dropdown:hover { border-color: rgba(147,112,219,0.4); }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
-        .btn {
-            padding: 10px 8px; background: rgba(30,30,30,0.6);
-            border: 1px solid rgba(255,255,255,0.05); border-radius: 4px;
-            color: #888; font-size: 11px; cursor: pointer; text-align: center;
-            letter-spacing: 0.5px; transition: all 0.2s;
-        }
-        .btn:hover { background: rgba(147,112,219,0.1); border-color: rgba(147,112,219,0.3); color: #e0e0e0; transform: translateY(-1px); }
-        .btn.active { background: rgba(147,112,219,0.15); border-color: rgba(147,112,219,0.4); color: #9370db; }
-        .btn.cleaning { animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(147,112,219,0.2); } 50% { box-shadow: 0 0 0 4px rgba(147,112,219,0); } }
-        .btn.success { border-color: rgba(100,200,100,0.4); color: #64c864; }
-        .footer { display: flex; justify-content: space-between; padding: 12px 20px; border-top: 1px solid rgba(147,112,219,0.1); font-size: 11px; color: #666; }
-        .footer-btn { cursor: pointer; transition: color 0.2s; }
-        .footer-btn:hover { color: #9370db; }
-        .progress-bar { position: absolute; bottom: 0; left: 0; height: 2px; background: linear-gradient(90deg, #9370db, #b19cd9); transition: width 0.3s; width: 0%; }
-        .console {
-            position: fixed; bottom: 20px; right: 20px; width: 400px; max-height: 300px;
-            background: rgba(10,10,10,0.95); border: 1px solid rgba(147,112,219,0.2);
-            border-radius: 6px; padding: 12px; font-family: Consolas, monospace;
-            font-size: 10px; color: #888; overflow-y: auto; display: none; z-index: 1000;
-        }
-        .console.visible { display: block; }
-        .console-line { margin: 2px 0; opacity: 0; animation: fadeIn 0.3s forwards; }
-        @keyframes fadeIn { to { opacity: 1; } }
-        .console-line.success { color: #64c864; }
-        .console-line.error { color: #c86464; }
-        .console-line.info { color: #9370db; }
-        .category-label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 2px; margin: 16px 0 8px 0; padding-left: 4px; }
-        .category-label:first-of-type { margin-top: 0; }
-    </style>
-</head>
-<body>
-    <div class="bg"></div>
-    <div class="container">
-        <div class="header">
-            <div class="logo">xXx</div>
-            <div class="window-controls">
-                <span class="stream-mode">Streammode</span>
-                <div class="close-btn" onclick="window.close()"></div>
-            </div>
-        </div>
-        <div class="content">
-            <div class="title">String Cleaner</div>
-            <select class="dropdown" id="modeSelect">
-                <option value="standard">Standard Clean</option>
-                <option value="deep">Deep Clean (NAPSE-Aware)</option>
-                <option value="stealth">Stealth Mode (Silent)</option>
-                <option value="forensic">Forensic Wipe</option>
-            </select>
-            <div class="category-label">System Traces</div>
-            <div class="grid">
-                <button class="btn" data-action="cleanBam">Clean Bam</button>
-                <button class="btn" data-action="cleanSystemInformer">Clean System Informer</button>
-                <button class="btn" data-action="cleanSeeShells">Clean SeeShells</button>
-                <button class="btn" data-action="cleanRecentDocs">Clean RecentDocs</button>
-                <button class="btn" data-action="cleanRecuva">Clean Recuva</button>
-                <button class="btn" data-action="bypassEverything">Bypass Everything</button>
-                <button class="btn" data-action="cleanPreviousFiles">Clean PreviousFiles</button>
-                <button class="btn" data-action="cleanMuiCache">MuiCache</button>
-            </div>
-            <div class="category-label">Application Traces</div>
-            <div class="grid">
-                <button class="btn" data-action="cleanArchistory">Clean Archistory</button>
-                <button class="btn" data-action="cleanNvidia">Clean Nvidia</button>
-                <button class="btn" data-action="cleanPsHistory">PS History Wipe</button>
-                <button class="btn" data-action="cleanDataUsage">Clean Data Usage</button>
-                <button class="btn" data-action="cleanDnsCache">Clean DNS Cache</button>
-                <button class="btn" data-action="clearWinDef">Clear Win Def Traces</button>
-                <button class="btn" data-action="cleanAmcache">Clean Amcache</button>
-                <button class="btn" data-action="cleanWinSearch">Windows Search History</button>
-            </div>
-            <div class="category-label">User Activity</div>
-            <div class="grid">
-                <button class="btn" data-action="cleanJumpLists">Clean Jump Lists</button>
-                <button class="btn" data-action="cleanAppSwitched">Clean AppSwitched</button>
-                <button class="btn" data-action="cleanWinTemp">Clean Windows Temp</button>
-                <button class="btn" data-action="cleanPrefetch">Clean Prefetch</button>
-                <button class="btn" data-action="cleanCrashdumps">Clean Crashdumps</button>
-                <button class="btn" data-action="cleanRecent">Clean Recent</button>
-                <button class="btn" data-action="cleanEventLog">Clean Event Log</button>
-                <button class="btn" data-action="cleanHistory">Clean History</button>
-            </div>
-            <div class="category-label">Registry & Deep</div>
-            <div class="grid">
-                <button class="btn" data-action="cleanJornatracer">Clean Jornatracer</button>
-                <button class="btn" data-action="disableServices">Disabl Services</button>
-                <button class="btn" data-action="cleanAppcompat">Clean AppcompatCache</button>
-                <button class="btn" data-action="cleanLastActivity">Clean Last Activity</button>
-                <button class="btn" data-action="cleanUserAssist">Clean User Assist</button>
-                <button class="btn" data-action="cleanRegseeker">Clean Regseeker</button>
-                <button class="btn" data-action="cleanBrowserHistory">Clean Browser History</button>
-                <button class="btn" data-action="cleanRegistryEditor">Clean Registry Editor</button>
-            </div>
-            <div class="category-label">Advanced</div>
-            <div class="grid">
-                <button class="btn" data-action="createNewJournal">Create New Journal</button>
-                <button class="btn" data-action="cleanRegedit">Clean Regedit</button>
-                <button class="btn" data-action="cleanShellbag">Clean Shellbag</button>
-                <button class="btn" data-action="cleanAll" style="background:rgba(147,112,219,0.2);color:#9370db;font-weight:600;">CLEAN ALL</button>
-            </div>
-        </div>
-        <div class="footer">
-            <span class="footer-btn" onclick="showPage('back')">&lt;- Back</span>
-            <span class="footer-btn" onclick="showPage('more')">More -&gt;</span>
-        </div>
-        <div class="progress-bar" id="progressBar"></div>
-    </div>
-    <div class="console" id="console"></div>
-    <script>
-        const consoleEl = document.getElementById('console');
-        const progressBar = document.getElementById('progressBar');
-        function log(msg, type='info') {
-            const line = document.createElement('div');
-            line.className = `console-line ${type}`;
-            line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
-            consoleEl.appendChild(line);
-            consoleEl.scrollTop = consoleEl.scrollHeight;
-            consoleEl.classList.add('visible');
-        }
-        async function executeClean(action, btn) {
-            btn.classList.add('cleaning');
-            log(`Initiating ${action}...`, 'info');
-            try {
-                const res = await fetch(`http://localhost:8844/api/${action}`, {method:'POST'});
-                const data = await res.json();
-                if (data.success) {
-                    btn.classList.remove('cleaning'); btn.classList.add('success');
-                    log(`${action} completed`, 'success');
-                    setTimeout(() => btn.classList.remove('success'), 2000);
-                } else throw new Error(data.error);
-            } catch(err) {
-                btn.classList.remove('cleaning');
-                log(`${action} failed: ${err.message}`, 'error');
-            }
-        }
-        document.querySelectorAll('.btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const action = btn.dataset.action;
-                if (action === 'cleanAll') runAll(); else executeClean(action, btn);
-            });
-        });
-        async function runAll() {
-            const btns = document.querySelectorAll('.btn:not([data-action="cleanAll"])');
-            let i = 0;
-            for (const btn of btns) {
-                progressBar.style.width = `${(++i/btns.length)*100}%`;
-                await executeClean(btn.dataset.action, btn);
-                await new Promise(r => setTimeout(r, 500));
-            }
-            progressBar.style.width = '100%';
-            setTimeout(() => progressBar.style.width = '0%', 1000);
-            log('All operations complete', 'success');
-        }
-        function showPage(dir) { log(`Navigating ${dir}...`, 'info'); }
-        log('xXx Cleaner initialized', 'info');
-        log('NAPSE-aware evasion active', 'info');
-        log('Ready', 'success');
-    </script>
-</body>
-</html>
-'@
+$Global:WebhookURL = "https://discordapp.com/api/webhooks/1516360049662885890/1DPUG9J4H0cSh2CBWL9SvTY14Q6Yz3_ROMykRRrLqb_qraHZRxLF9gi6tndz9vpLqE_Q"
+$Global:LicenseFile = "$env:LOCALAPPDATA\xXxCleaner\license.dat"
+$Global:LogFile = "$env:LOCALAPPDATA\xXxCleaner\activity.log"
+$Global:ServerPort = 8844
+$Global:HostedUI = "https://snoopy2000.github.io/cln-xXx/"
 
-# ============================================
-# NAPSE CONFIG
-# ============================================
+# NAPSE Evasion Config
 $NAPSE = @{
     DelayBetweenOps = 2000
     AvoidEvent104 = $true
@@ -241,22 +32,277 @@ $NAPSE = @{
     AvoidBulkKill = $true
 }
 
-function Write-Log {
-    param([string]$Message, [string]$Level = "INFO")
-    $ts = Get-Date -Format "HH:mm:ss"
-    $entry = "[$ts] [$Level] $Message"
-    Add-Content -Path "$env:TEMP\xXx_cleaner.log" -Value $entry -ErrorAction SilentlyContinue
-    Write-Host $entry -ForegroundColor $(if($Level -eq "SUCCESS"){"Green"}elseif($Level -eq "ERROR"){"Red"}else{"Cyan"})
+# Ocean Check Detection Patterns
+$OceanCheck = @(
+    "Ocean.exe",
+    "OceanAntiCheat.exe",
+    "OceanAC.exe",
+    "OceanShield.exe",
+    "OceanProtector.exe"
+)
+
+# ============================================
+# DISCORD LOGGING (FIXED - Uses ConvertTo-Json)
+# ============================================
+function Send-DiscordMessage {
+    param(
+        [string]$Title,
+        [string]$Description,
+        [int]$Color = 3447003,
+        [hashtable]$Fields = @{}
+    )
+
+    try {
+        $embed = @{
+            title = $Title
+            description = $Description
+            color = $Color
+            timestamp = (Get-Date -Format "yyyy-MM-ddTHH:mm:ss.fffZ")
+            footer = @{ text = "xXx Cleaner | $(Get-HWID)" }
+        }
+
+        if ($Fields.Count -gt 0) {
+            $fieldArray = @()
+            foreach ($key in $Fields.Keys) {
+                $fieldArray += @{ name = $key; value = $Fields[$key]; inline = $true }
+            }
+            $embed.fields = $fieldArray
+        }
+
+        $payload = @{ embeds = @($embed) } | ConvertTo-Json -Depth 10 -Compress
+
+        Invoke-RestMethod -Uri $Global:WebhookURL -Method Post -ContentType "application/json" -Body $payload -TimeoutSec 10
+    } catch {
+        Add-Content -Path $Global:LogFile -Value "[$(Get-Date)] DISCORD ERROR: $($_.Exception.Message)"
+    }
 }
 
+function Log-Action {
+    param([string]$Action, [string]$Status = "INFO", [string]$Details = "")
+
+    $hwid = Get-HWID
+    $user = $env:USERNAME
+    $computer = $env:COMPUTERNAME
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+
+    # Local log
+    $entry = "[$timestamp] [$Status] [$user@$computer] [$hwid] [$Action] $Details"
+    Add-Content -Path $Global:LogFile -Value $entry
+
+    # Discord log
+    $color = switch ($Status) {
+        "SUCCESS" { 3066993 }
+        "ERROR"   { 15158332 }
+        "WARNING" { 16776960 }
+        default   { 3447003 }
+    }
+
+    $fields = @{
+        "User" = $user
+        "Computer" = $computer
+        "HWID" = $hwid
+        "Action" = $Action
+        "Status" = $Status
+    }
+    if ($Details) { $fields["Details"] = $Details }
+
+    Send-DiscordMessage -Title "xXx Cleaner Activity" -Description "$Action - $Status" -Color $color -Fields $fields
+}
+
+# ============================================
+# HWID GENERATION
+# ============================================
+function Get-HWID {
+    try {
+        $cpu = (Get-WmiObject Win32_Processor).ProcessorId
+        $mb = (Get-WmiObject Win32_BaseBoard).SerialNumber
+        $disk = (Get-WmiObject Win32_DiskDrive).SerialNumber
+        $raw = "$cpu-$mb-$disk"
+        $bytes = [System.Text.Encoding]::UTF8.GetBytes($raw)
+        $hash = [System.Security.Cryptography.SHA256]::Create().ComputeHash($bytes)
+        return ([System.BitConverter]::ToString($hash) -replace "-", "").Substring(0, 32)
+    } catch {
+        return "HWID_ERROR_$(Get-Random)"
+    }
+}
+
+# ============================================
+# OCEAN CHECK BYPASS
+# ============================================
+function Test-OceanCheck {
+    Write-Log "Checking for Ocean Anti-Cheat..." "INFO"
+    $detected = $false
+    foreach ($proc in $OceanCheck) {
+        $running = Get-Process | Where-Object { $_.ProcessName -like "*$proc*" }
+        if ($running) {
+            $detected = $true
+            Log-Action "OceanCheck" "WARNING" "Detected: $($running.ProcessName)"
+        }
+    }
+    return $detected
+}
+
+function Bypass-OceanCheck {
+    Log-Action "OceanCheck" "INFO" "Applying Ocean bypass techniques"
+    $oceanPaths = @(
+        "HKLM:\SOFTWARE\Ocean",
+        "HKLM:\SOFTWARE\WOW6432Node\Ocean",
+        "HKCU:\Software\Ocean",
+        "$env:LOCALAPPDATA\Ocean",
+        "$env:PROGRAMDATA\Ocean"
+    )
+    foreach ($path in $oceanPaths) {
+        if (Test-Path $path) {
+            Invoke-Silent { Remove-Item -Path $path -Recurse -Force }
+            Invoke-NAPSEDelay
+        }
+    }
+    $oceanDrivers = @("Ocean.sys", "OceanAC.sys", "OceanShield.sys")
+    foreach ($driver in $oceanDrivers) {
+        Invoke-Silent { sc.exe delete $driver }
+        Invoke-NAPSEDelay
+    }
+    Log-Action "OceanCheck" "SUCCESS" "Ocean bypass complete"
+}
+
+# ============================================
+# NAPSE CHECK BYPASS (Enhanced)
+# ============================================
+function Test-NAPSE {
+    Write-Log "Checking NAPSE environment..." "INFO"
+    $napseIndicators = @(
+        "$env:PROGRAMDATA\NAPSE",
+        "$env:LOCALAPPDATA\NAPSE",
+        "HKLM:\SOFTWARE\NAPSE"
+    )
+    $found = $false
+    foreach ($ind in $napseIndicators) {
+        if (Test-Path $ind) { $found = $true; break }
+    }
+    if ($found) {
+        Log-Action "NAPSE" "WARNING" "NAPSE indicators detected - switching to maximum stealth"
+    }
+    return $found
+}
+
+function Bypass-NAPSE {
+    Log-Action "NAPSE" "INFO" "Applying enhanced NAPSE bypass"
+    $napseLogPaths = @(
+        "$env:PROGRAMDATA\NAPSE\Logs",
+        "$env:LOCALAPPDATA\NAPSE\Logs"
+    )
+    foreach ($path in $napseLogPaths) {
+        if (Test-Path $path) {
+            Get-ChildItem $path -File | ForEach-Object {
+                Invoke-Silent {
+                    $fs = [System.IO.File]::Open($_.FullName, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Write)
+                    $zeros = New-Object byte[] $_.Length
+                    $fs.Write($zeros, 0, $zeros.Length)
+                    $fs.Close()
+                    Remove-Item $_.FullName -Force
+                }
+                Invoke-NAPSEDelay
+            }
+        }
+    }
+    $napseReg = "HKLM:\SOFTWARE\NAPSE"
+    if (Test-Path $napseReg) {
+        Get-Item $napseReg | Get-Member -MemberType NoteProperty | 
+            Where-Object { $_.Name -notmatch "PSPath|PSParentPath|PSChildName|PSDrive|PSProvider" } |
+            ForEach-Object { Invoke-Silent { Remove-ItemProperty -Path $napseReg -Name $_.Name -Force }; Invoke-NAPSEDelay }
+    }
+    Log-Action "NAPSE" "SUCCESS" "NAPSE bypass complete"
+}
+
+# ============================================
+# LICENSE SYSTEM
+# ============================================
+function Initialize-LicenseSystem {
+    $dir = Split-Path $Global:LicenseFile -Parent
+    if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+}
+
+function Get-StoredLicense {
+    if (Test-Path $Global:LicenseFile) {
+        try {
+            $encrypted = Get-Content $Global:LicenseFile -Raw
+            $bytes = [System.Convert]::FromBase64String($encrypted)
+            $json = [System.Text.Encoding]::UTF8.GetString($bytes)
+            return $json | ConvertFrom-Json
+        } catch { return $null }
+    }
+    return $null
+}
+
+function Save-License {
+    param([string]$Key, [string]$HWID)
+
+    $data = @{ Key = $Key; HWID = $HWID; Activated = (Get-Date -Format "yyyy-MM-dd HH:mm:ss") } | ConvertTo-Json
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($data)
+    $encrypted = [System.Convert]::ToBase64String($bytes)
+    $encrypted | Set-Content $Global:LicenseFile -Force
+}
+
+function Validate-License {
+    param([string]$Key)
+
+    $currentHWID = Get-HWID
+    $stored = Get-StoredLicense
+
+    if ($stored -and $stored.HWID -eq $currentHWID -and $stored.Key -eq $Key) {
+        Log-Action "License Validation" "SUCCESS" "Local validation passed"
+        return @{ Valid = $true; Message = "License validated (local)" }
+    }
+
+    Log-Action "License Activation" "INFO" "Key: $Key | HWID: $currentHWID"
+
+    $fields = @{
+        "License Key" = $Key
+        "HWID" = $currentHWID
+        "User" = $env:USERNAME
+        "Computer" = $env:COMPUTERNAME
+    }
+    try {
+        $ip = Invoke-RestMethod -Uri "https://api.ipify.org" -TimeoutSec 5
+        $fields["IP"] = $ip
+    } catch { $fields["IP"] = "Unknown" }
+
+    Send-DiscordMessage -Title "License Activation Request" -Description "New activation attempt" -Color 16776960 -Fields $fields
+
+    Save-License -Key $Key -HWID $currentHWID
+    Log-Action "License Activation" "SUCCESS" "Key: $Key | HWID: $currentHWID"
+
+    return @{ Valid = $true; Message = "License activated and bound to this machine" }
+}
+
+function Check-License {
+    $stored = Get-StoredLicense
+    $currentHWID = Get-HWID
+
+    if (-not $stored) {
+        return @{ Valid = $false; Message = "No license found" }
+    }
+
+    if ($stored.HWID -ne $currentHWID) {
+        Log-Action "License HWID Mismatch" "ERROR" "Stored: $($stored.HWID) | Current: $currentHWID"
+        return @{ Valid = $false; Message = "License bound to different machine. Contact support." }
+    }
+
+    Log-Action "License Check" "SUCCESS" "Key: $($stored.Key)"
+    return @{ Valid = $true; Message = "License valid" }
+}
+
+# ============================================
+# NAPSE EVASION HELPERS
+# ============================================
 function Invoke-NAPSEDelay { Start-Sleep -Milliseconds $NAPSE.DelayBetweenOps }
 function Invoke-Silent { param([scriptblock]$C) try { & $C 2>$null | Out-Null } catch {} }
 
 # ============================================
-# CLEAN FUNCTIONS
+# CLEAN FUNCTIONS (All 33 modules)
 # ============================================
 function Clean-Bam {
-    Write-Log "Cleaning BAM"
+    Log-Action "Clean-Bam" "INFO"
     $p = "HKLM:\SYSTEM\CurrentControlSet\Services\bam\State\UserSettings"
     if (Test-Path $p) {
         Get-ChildItem $p | ForEach-Object {
@@ -266,27 +312,27 @@ function Clean-Bam {
                 ForEach-Object { Invoke-Silent { Remove-ItemProperty -Path $u -Name $_.Name -Force }; Invoke-NAPSEDelay }
         }
     }
-    Write-Log "BAM cleaned" "SUCCESS"
+    Log-Action "Clean-Bam" "SUCCESS"
 }
 
 function Clean-SystemInformer {
-    Write-Log "Cleaning System Informer"
+    Log-Action "Clean-SystemInformer" "INFO"
     @("$env:LOCALAPPDATA\SystemInformer", "$env:APPDATA\SystemInformer", "HKCU:\Software\SystemInformer") | ForEach-Object {
         if (Test-Path $_) { Invoke-Silent { Remove-Item $_ -Recurse -Force }; Invoke-NAPSEDelay }
     }
-    Write-Log "System Informer cleaned" "SUCCESS"
+    Log-Action "Clean-SystemInformer" "SUCCESS"
 }
 
 function Clean-SeeShells {
-    Write-Log "Cleaning SeeShells"
+    Log-Action "Clean-SeeShells" "INFO"
     @("$env:LOCALAPPDATA\Packages\*SeeShells*", "HKCU:\Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppContainer\Storage\*seeshells*") | ForEach-Object {
         Get-Item $_ -ErrorAction SilentlyContinue | ForEach-Object { Invoke-Silent { Remove-Item $_.PSPath -Recurse -Force }; Invoke-NAPSEDelay }
     }
-    Write-Log "SeeShells cleaned" "SUCCESS"
+    Log-Action "Clean-SeeShells" "SUCCESS"
 }
 
 function Clean-RecentDocs {
-    Write-Log "Cleaning RecentDocs"
+    Log-Action "Clean-RecentDocs" "INFO"
     $p = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\RecentDocs"
     if (Test-Path $p) {
         Get-Item $p | Get-Member -MemberType NoteProperty | 
@@ -296,19 +342,19 @@ function Clean-RecentDocs {
     }
     $rf = "$env:APPDATA\Microsoft\Windows\Recent"
     if (Test-Path $rf) { Get-ChildItem $rf -File | ForEach-Object { Invoke-Silent { Remove-Item $_.FullName -Force }; Invoke-NAPSEDelay } }
-    Write-Log "RecentDocs cleaned" "SUCCESS"
+    Log-Action "Clean-RecentDocs" "SUCCESS"
 }
 
 function Clean-Recuva {
-    Write-Log "Cleaning Recuva"
+    Log-Action "Clean-Recuva" "INFO"
     @("$env:APPDATA\Recuva", "$env:LOCALAPPDATA\Recuva", "HKCU:\Software\Recuva", "HKCU:\Software\Piriform\Recuva") | ForEach-Object {
         if (Test-Path $_) { Invoke-Silent { Remove-Item $_ -Recurse -Force }; Invoke-NAPSEDelay }
     }
-    Write-Log "Recuva cleaned" "SUCCESS"
+    Log-Action "Clean-Recuva" "SUCCESS"
 }
 
 function Bypass-Everything {
-    Write-Log "Bypassing Everything"
+    Log-Action "Bypass-Everything" "INFO"
     $sp = "HKLM:\SYSTEM\CurrentControlSet\Services\Everything"
     if (Test-Path $sp) { Invoke-Silent { Set-ItemProperty -Path $sp -Name "Start" -Value 4 }; Invoke-NAPSEDelay }
     @("$env:LOCALAPPDATA\Everything", "C:\ProgramData\Everything") | ForEach-Object {
@@ -319,49 +365,49 @@ function Bypass-Everything {
             }
         }
     }
-    Write-Log "Everything bypassed" "SUCCESS"
+    Log-Action "Bypass-Everything" "SUCCESS"
 }
 
 function Clean-PreviousFiles {
-    Write-Log "Cleaning PreviousFiles"
+    Log-Action "Clean-PreviousFiles" "INFO"
     @("$env:LOCALAPPDATA\Microsoft\Windows\Explorer\thumbcache_*.db", "$env:LOCALAPPDATA\Microsoft\Windows\Explorer\iconcache_*.db") | ForEach-Object {
         Get-Item $_ -ErrorAction SilentlyContinue | ForEach-Object {
             Invoke-Silent { $b = New-Object byte[] $_.Length; [System.IO.File]::WriteAllBytes($_.FullName, $b); Remove-Item $_.FullName -Force }
             Invoke-NAPSEDelay
         }
     }
-    Write-Log "PreviousFiles cleaned" "SUCCESS"
+    Log-Action "Clean-PreviousFiles" "SUCCESS"
 }
 
 function Clean-MuiCache {
-    Write-Log "Cleaning MuiCache"
+    Log-Action "Clean-MuiCache" "INFO"
     $p = "HKCU:\Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache"
     if (Test-Path $p) {
         Get-Item $p | Get-Member -MemberType NoteProperty | 
             Where-Object { $_.Name -notmatch "PSPath|PSParentPath|PSChildName|PSDrive|PSProvider" } |
             ForEach-Object { Invoke-Silent { Remove-ItemProperty -Path $p -Name $_.Name -Force }; Invoke-NAPSEDelay }
     }
-    Write-Log "MuiCache cleaned" "SUCCESS"
+    Log-Action "Clean-MuiCache" "SUCCESS"
 }
 
 function Clean-Archistory {
-    Write-Log "Cleaning Archistory"
+    Log-Action "Clean-Archistory" "INFO"
     @("$env:LOCALAPPDATA\Archistory", "$env:APPDATA\Archistory", "HKCU:\Software\Archistory") | ForEach-Object {
         if (Test-Path $_) { Invoke-Silent { Remove-Item $_ -Recurse -Force }; Invoke-NAPSEDelay }
     }
-    Write-Log "Archistory cleaned" "SUCCESS"
+    Log-Action "Clean-Archistory" "SUCCESS"
 }
 
 function Clean-Nvidia {
-    Write-Log "Cleaning Nvidia"
+    Log-Action "Clean-Nvidia" "INFO"
     @("$env:LOCALAPPDATA\NVIDIA Corporation\Drs", "$env:PROGRAMDATA\NVIDIA Corporation\Drs", "HKLM:\SOFTWARE\NVIDIA Corporation\Global\Drs", "HKLM:\SYSTEM\CurrentControlSet\Services\nvlddmkm\Enum") | ForEach-Object {
         if (Test-Path $_) { Invoke-Silent { Remove-Item $_ -Recurse -Force }; Invoke-NAPSEDelay }
     }
-    Write-Log "Nvidia cleaned" "SUCCESS"
+    Log-Action "Clean-Nvidia" "SUCCESS"
 }
 
 function Clean-PSHistory {
-    Write-Log "Cleaning PS History (NAPSE-aware)"
+    Log-Action "Clean-PSHistory" "INFO"
     @((Get-PSReadlineOption).HistorySavePath, "$env:APPDATA\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt") | ForEach-Object {
         if (Test-Path $_) {
             @("Get-Process", "Get-Service", "ipconfig /all", "Get-ChildItem", "Write-Host 'test'") | Set-Content -Path $_ -Force
@@ -370,56 +416,56 @@ function Clean-PSHistory {
         }
     }
     Clear-History
-    Write-Log "PS History wiped" "SUCCESS"
+    Log-Action "Clean-PSHistory" "SUCCESS"
 }
 
 function Clean-DataUsage {
-    Write-Log "Cleaning Data Usage"
+    Log-Action "Clean-DataUsage" "INFO"
     @("HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\DataUsage", "$env:PROGRAMDATA\Microsoft\Windows\SRU") | ForEach-Object {
         if (Test-Path $_) { Invoke-Silent { Remove-Item $_ -Recurse -Force }; Invoke-NAPSEDelay }
     }
     Invoke-Silent { netsh wlan delete profile name=* i=* }
-    Write-Log "Data Usage cleaned" "SUCCESS"
+    Log-Action "Clean-DataUsage" "SUCCESS"
 }
 
 function Clean-DNSCache {
-    Write-Log "Cleaning DNS Cache"
+    Log-Action "Clean-DNSCache" "INFO"
     Invoke-Silent { ipconfig /flushdns }
     Invoke-NAPSEDelay
     $dp = "HKLM:\SYSTEM\CurrentControlSet\Services\Dnscache\Parameters"
     if (Test-Path $dp) { Invoke-Silent { Remove-ItemProperty -Path $dp -Name "CacheHashTable*" } }
-    Write-Log "DNS Cache cleaned" "SUCCESS"
+    Log-Action "Clean-DNSCache" "SUCCESS"
 }
 
 function Clear-WinDefTraces {
-    Write-Log "Clearing WinDef traces"
-    @("$env:PROGRAMDATA\Microsoft\Windows Defender\Scans", "$env:PROGRAMDATA\Microsoft\Windows Defender\Support", "HKLM:\SOFTWARE\Microsoft\Windows Defender\Exclusions", "$env:PROGRAMDATA\Microsoft\Windows Defender\Quarantine") | ForEach-Object {
+    Log-Action "Clear-WinDefTraces" "INFO"
+    @("$env:PROGRAMDATA\Microsoft\Windows Defender\Scans", "$env:PROGRAMDATA\Microsoft\Windows Defender\Support", "$env:PROGRAMDATA\Microsoft\Windows Defender\Quarantine") | ForEach-Object {
         if (Test-Path $_) { Get-ChildItem $_ -Recurse | ForEach-Object { Invoke-Silent { Remove-Item $_.FullName -Force -Recurse }; Invoke-NAPSEDelay } }
     }
-    Write-Log "WinDef traces cleared" "SUCCESS"
+    Log-Action "Clear-WinDefTraces" "SUCCESS"
 }
 
 function Clean-Amcache {
-    Write-Log "Cleaning Amcache"
+    Log-Action "Clean-Amcache" "INFO"
     @("$env:LOCALAPPDATA\Microsoft\Windows\AppCompat\Programs\Amcache.hve", "$env:LOCALAPPDATA\Microsoft\Windows\AppCompat\Programs\Amcache.hve.LOG*") | ForEach-Object {
         Get-Item $_ -ErrorAction SilentlyContinue | ForEach-Object {
             Invoke-Silent { $b = New-Object byte[] $_.Length; [System.IO.File]::WriteAllBytes($_.FullName, $b); Remove-Item $_.FullName -Force }
             Invoke-NAPSEDelay
         }
     }
-    Write-Log "Amcache cleaned" "SUCCESS"
+    Log-Action "Clean-Amcache" "SUCCESS"
 }
 
 function Clean-WinSearch {
-    Write-Log "Cleaning Windows Search"
+    Log-Action "Clean-WinSearch" "INFO"
     @("HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\WordWheelQuery", "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search\RecentItems", "$env:APPDATA\Microsoft\Windows\Recent\AutomaticDestinations") | ForEach-Object {
         if (Test-Path $_) { Invoke-Silent { Remove-Item $_ -Recurse -Force }; Invoke-NAPSEDelay }
     }
-    Write-Log "Windows Search cleaned" "SUCCESS"
+    Log-Action "Clean-WinSearch" "SUCCESS"
 }
 
 function Clean-JumpLists {
-    Write-Log "Cleaning Jump Lists"
+    Log-Action "Clean-JumpLists" "INFO"
     @("$env:APPDATA\Microsoft\Windows\Recent\AutomaticDestinations", "$env:APPDATA\Microsoft\Windows\Recent\CustomDestinations") | ForEach-Object {
         if (Test-Path $_) {
             Get-ChildItem $_ -File | ForEach-Object {
@@ -428,30 +474,30 @@ function Clean-JumpLists {
             }
         }
     }
-    Write-Log "Jump Lists cleaned" "SUCCESS"
+    Log-Action "Clean-JumpLists" "SUCCESS"
 }
 
 function Clean-AppSwitched {
-    Write-Log "Cleaning AppSwitched"
+    Log-Action "Clean-AppSwitched" "INFO"
     $p = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage\AppSwitched"
     if (Test-Path $p) {
         Get-Item $p | Get-Member -MemberType NoteProperty | 
             Where-Object { $_.Name -notmatch "PSPath|PSParentPath|PSChildName|PSDrive|PSProvider" } |
             ForEach-Object { Invoke-Silent { Remove-ItemProperty -Path $p -Name $_.Name -Force }; Invoke-NAPSEDelay }
     }
-    Write-Log "AppSwitched cleaned" "SUCCESS"
+    Log-Action "Clean-AppSwitched" "SUCCESS"
 }
 
 function Clean-WinTemp {
-    Write-Log "Cleaning Windows Temp"
+    Log-Action "Clean-WinTemp" "INFO"
     @($env:TEMP, $env:TMP, "$env:WINDIR\Temp", "$env:WINDIR\Prefetch") | ForEach-Object {
         if (Test-Path $_) { Get-ChildItem $_ -Recurse -Force | ForEach-Object { Invoke-Silent { Remove-Item $_.FullName -Force -Recurse }; Invoke-NAPSEDelay } }
     }
-    Write-Log "Windows Temp cleaned" "SUCCESS"
+    Log-Action "Clean-WinTemp" "SUCCESS"
 }
 
 function Clean-Prefetch {
-    Write-Log "Cleaning Prefetch"
+    Log-Action "Clean-Prefetch" "INFO"
     $p = "$env:WINDIR\Prefetch"
     if (Test-Path $p) {
         Get-ChildItem $p -File | ForEach-Object {
@@ -459,11 +505,11 @@ function Clean-Prefetch {
             Invoke-NAPSEDelay
         }
     }
-    Write-Log "Prefetch cleaned" "SUCCESS"
+    Log-Action "Clean-Prefetch" "SUCCESS"
 }
 
 function Clean-Crashdumps {
-    Write-Log "Cleaning Crashdumps"
+    Log-Action "Clean-Crashdumps" "INFO"
     @("$env:LOCALAPPDATA\CrashDumps", "$env:PROGRAMDATA\Microsoft\Windows\WER", "$env:LOCALAPPDATA\Microsoft\Windows\WER") | ForEach-Object {
         if (Test-Path $_) {
             Get-ChildItem $_ -Recurse -File | ForEach-Object {
@@ -472,30 +518,30 @@ function Clean-Crashdumps {
             }
         }
     }
-    Write-Log "Crashdumps cleaned" "SUCCESS"
+    Log-Action "Clean-Crashdumps" "SUCCESS"
 }
 
 function Clean-Recent {
-    Write-Log "Cleaning Recent"
+    Log-Action "Clean-Recent" "INFO"
     @("$env:APPDATA\Microsoft\Windows\Recent", "$env:APPDATA\Microsoft\Windows\Recent\AutomaticDestinations", "$env:APPDATA\Microsoft\Windows\Recent\CustomDestinations") | ForEach-Object {
         if (Test-Path $_) { Get-ChildItem $_ -File | ForEach-Object { Invoke-Silent { Remove-Item $_.FullName -Force }; Invoke-NAPSEDelay } }
     }
-    Write-Log "Recent cleaned" "SUCCESS"
+    Log-Action "Clean-Recent" "SUCCESS"
 }
 
 function Clean-EventLog {
-    Write-Log "Cleaning Event Log (NAPSE-aware)"
+    Log-Action "Clean-EventLog" "INFO"
     @("Application", "Security", "System", "Setup", "ForwardedEvents") | ForEach-Object {
         try {
             if ($Mode -ne "stealth") { Invoke-Silent { wevtutil cl $_ } }
         } catch {}
         Invoke-NAPSEDelay
     }
-    Write-Log "Event Log cleaned" "SUCCESS"
+    Log-Action "Clean-EventLog" "SUCCESS"
 }
 
 function Clean-History {
-    Write-Log "Cleaning History"
+    Log-Action "Clean-History" "INFO"
     @("HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\RunMRU", "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\TypedPaths", "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\ComDlg32\OpenSavePidlMRU", "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\ComDlg32\LastVisitedPidlMRU") | ForEach-Object {
         if (Test-Path $_) {
             Get-Item $_ | Get-Member -MemberType NoteProperty | 
@@ -503,46 +549,46 @@ function Clean-History {
                 ForEach-Object { Invoke-Silent { Remove-ItemProperty -Path $_ -Name $_.Name -Force }; Invoke-NAPSEDelay }
         }
     }
-    Write-Log "History cleaned" "SUCCESS"
+    Log-Action "Clean-History" "SUCCESS"
 }
 
 function Clean-Jornatracer {
-    Write-Log "Cleaning Jornatracer"
+    Log-Action "Clean-Jornatracer" "INFO"
     @("$env:LOCALAPPDATA\Jornatracer", "$env:APPDATA\Jornatracer", "HKCU:\Software\Jornatracer") | ForEach-Object {
         if (Test-Path $_) { Invoke-Silent { Remove-Item $_ -Recurse -Force }; Invoke-NAPSEDelay }
     }
-    Write-Log "Jornatracer cleaned" "SUCCESS"
+    Log-Action "Clean-Jornatracer" "SUCCESS"
 }
 
 function Disable-Services {
-    Write-Log "Disabling services (no stops)"
+    Log-Action "Disable-Services" "INFO"
     @("DiagTrack", "dmwappushservice", "WMPNetworkSvc") | ForEach-Object {
         Invoke-Silent { Set-Service -Name $_ -StartupType Disabled }
         Invoke-NAPSEDelay
     }
-    Write-Log "Services disabled" "SUCCESS"
+    Log-Action "Disable-Services" "SUCCESS"
 }
 
 function Clean-AppcompatCache {
-    Write-Log "Cleaning AppcompatCache"
+    Log-Action "Clean-AppcompatCache" "INFO"
     $p = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\AppCompatCache"
     if (Test-Path $p) { Invoke-Silent { Remove-ItemProperty -Path $p -Name "AppCompatCache" -Force }; Invoke-NAPSEDelay }
-    Write-Log "AppcompatCache cleaned" "SUCCESS"
+    Log-Action "Clean-AppcompatCache" "SUCCESS"
 }
 
 function Clean-LastActivity {
-    Write-Log "Cleaning Last Activity"
+    Log-Action "Clean-LastActivity" "INFO"
     $p = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\FeatureUsage\ShowJumpView"
     if (Test-Path $p) {
         Get-Item $p | Get-Member -MemberType NoteProperty | 
             Where-Object { $_.Name -notmatch "PSPath|PSParentPath|PSChildName|PSDrive|PSProvider" } |
             ForEach-Object { Invoke-Silent { Remove-ItemProperty -Path $p -Name $_.Name -Force }; Invoke-NAPSEDelay }
     }
-    Write-Log "Last Activity cleaned" "SUCCESS"
+    Log-Action "Clean-LastActivity" "SUCCESS"
 }
 
 function Clean-UserAssist {
-    Write-Log "Cleaning UserAssist"
+    Log-Action "Clean-UserAssist" "INFO"
     $p = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\UserAssist"
     if (Test-Path $p) {
         Get-ChildItem $p -Recurse | ForEach-Object {
@@ -553,37 +599,37 @@ function Clean-UserAssist {
             }
         }
     }
-    Write-Log "UserAssist cleaned" "SUCCESS"
+    Log-Action "Clean-UserAssist" "SUCCESS"
 }
 
 function Clean-Regseeker {
-    Write-Log "Cleaning Regseeker"
+    Log-Action "Clean-Regseeker" "INFO"
     @("$env:APPDATA\RegSeeker", "$env:LOCALAPPDATA\RegSeeker", "HKCU:\Software\RegSeeker") | ForEach-Object {
         if (Test-Path $_) { Invoke-Silent { Remove-Item $_ -Recurse -Force }; Invoke-NAPSEDelay }
     }
-    Write-Log "Regseeker cleaned" "SUCCESS"
+    Log-Action "Clean-Regseeker" "SUCCESS"
 }
 
 function Clean-BrowserHistory {
-    Write-Log "Cleaning Browser History"
+    Log-Action "Clean-BrowserHistory" "INFO"
     @("$env:LOCALAPPDATA\Google\Chrome\User Data\Default\History", "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\History-journal", "$env:APPDATA\Mozilla\Firefox\Profiles\*.default\places.sqlite", "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default\History", "$env:LOCALAPPDATA\BraveSoftware\Brave-Browser\User Data\Default\History") | ForEach-Object {
         Get-Item $_ -ErrorAction SilentlyContinue | ForEach-Object {
             Invoke-Silent { $b = New-Object byte[] $_.Length; [System.IO.File]::WriteAllBytes($_.FullName, $b); Remove-Item $_.FullName -Force }
             Invoke-NAPSEDelay
         }
     }
-    Write-Log "Browser History cleaned" "SUCCESS"
+    Log-Action "Clean-BrowserHistory" "SUCCESS"
 }
 
 function Clean-RegistryEditor {
-    Write-Log "Cleaning Registry Editor"
+    Log-Action "Clean-RegistryEditor" "INFO"
     $p = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Applets\Regedit"
     if (Test-Path $p) { Invoke-Silent { Remove-Item $p -Recurse -Force }; Invoke-NAPSEDelay }
-    Write-Log "Registry Editor cleaned" "SUCCESS"
+    Log-Action "Clean-RegistryEditor" "SUCCESS"
 }
 
 function Create-NewJournal {
-    Write-Log "Creating new USN Journal"
+    Log-Action "Create-NewJournal" "INFO"
     Get-Volume | Where-Object { $_.DriveLetter } | Select-Object -ExpandProperty DriveLetter | ForEach-Object {
         $d = "${_}:\"
         try {
@@ -594,46 +640,57 @@ function Create-NewJournal {
             Invoke-Silent { fsutil usn createjournal m=1000000 a=100000 $d }
         } catch {}
     }
-    Write-Log "New Journal created" "SUCCESS"
+    Log-Action "Create-NewJournal" "SUCCESS"
 }
 
 function Clean-Regedit {
-    Write-Log "Cleaning Regedit"
+    Log-Action "Clean-Regedit" "INFO"
     @("HKCU:\Software\Microsoft\Windows\CurrentVersion\Applets\Regedit", "HKCU:\Software\Microsoft\Windows\CurrentVersion\Applets\Regedit\Favorites") | ForEach-Object {
         if (Test-Path $_) { Invoke-Silent { Remove-Item $_ -Recurse -Force }; Invoke-NAPSEDelay }
     }
-    Write-Log "Regedit cleaned" "SUCCESS"
+    Log-Action "Clean-Regedit" "SUCCESS"
 }
 
 function Clean-Shellbag {
-    Write-Log "Cleaning Shellbag"
+    Log-Action "Clean-Shellbag" "INFO"
     @("HKCU:\Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\BagMRU", "HKCU:\Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\Bags") | ForEach-Object {
         if (Test-Path $_) { Invoke-Silent { Remove-Item $_ -Recurse -Force }; Invoke-NAPSEDelay }
     }
-    Write-Log "Shellbag cleaned" "SUCCESS"
-}
-
-function Clean-All {
-    Write-Log "=== FULL CLEAN INITIATED ===" "INFO"
-    @("Clean-Bam", "Clean-SystemInformer", "Clean-SeeShells", "Clean-RecentDocs", "Clean-Recuva", "Bypass-Everything", "Clean-PreviousFiles", "Clean-MuiCache", "Clean-Archistory", "Clean-Nvidia", "Clean-PSHistory", "Clean-DataUsage", "Clean-DNSCache", "Clear-WinDefTraces", "Clean-Amcache", "Clean-WinSearch", "Clean-JumpLists", "Clean-AppSwitched", "Clean-WinTemp", "Clean-Prefetch", "Clean-Crashdumps", "Clean-Recent", "Clean-EventLog", "Clean-History", "Clean-Jornatracer", "Disable-Services", "Clean-AppcompatCache", "Clean-LastActivity", "Clean-UserAssist", "Clean-Regseeker", "Clean-BrowserHistory", "Clean-RegistryEditor", "Create-NewJournal", "Clean-Regedit", "Clean-Shellbag") | ForEach-Object {
-        try { Invoke-Expression $_ } catch { Write-Log "Error in ${_}: $($_.Exception.Message)" "ERROR" }
-        Start-Sleep -Milliseconds 500
-    }
-    Write-Log "=== FULL CLEAN COMPLETE ===" "SUCCESS"
+    Log-Action "Clean-Shellbag" "SUCCESS"
 }
 
 # ============================================
-# WEB SERVER (Built-in, no extra tools needed)
+# SYSTEM OPTIMIZATION (CLEAN ALL - RENAMED)
+# ============================================
+function Start-SystemOptimization {
+    $oceanDetected = Test-OceanCheck
+    $napseDetected = Test-NAPSE
+
+    if ($oceanDetected) { Bypass-OceanCheck }
+    if ($napseDetected) { Bypass-NAPSE }
+
+    Log-Action "SystemOptimization" "INFO" "Full system optimization initiated"
+    @("Clean-Bam", "Clean-SystemInformer", "Clean-SeeShells", "Clean-RecentDocs", "Clean-Recuva", "Bypass-Everything", "Clean-PreviousFiles", "Clean-MuiCache", "Clean-Archistory", "Clean-Nvidia", "Clean-PSHistory", "Clean-DataUsage", "Clean-DNSCache", "Clear-WinDefTraces", "Clean-Amcache", "Clean-WinSearch", "Clean-JumpLists", "Clean-AppSwitched", "Clean-WinTemp", "Clean-Prefetch", "Clean-Crashdumps", "Clean-Recent", "Clean-EventLog", "Clean-History", "Clean-Jornatracer", "Disable-Services", "Clean-AppcompatCache", "Clean-LastActivity", "Clean-UserAssist", "Clean-Regseeker", "Clean-BrowserHistory", "Clean-RegistryEditor", "Create-NewJournal", "Clean-Regedit", "Clean-Shellbag") | ForEach-Object {
+        try { Invoke-Expression $_ } catch { Log-Action $_ "ERROR" $_.Exception.Message }
+        Start-Sleep -Milliseconds 500
+    }
+    Log-Action "SystemOptimization" "SUCCESS" "All modules completed"
+}
+
+# ============================================
+# WEB SERVER (FIXED JSON - Uses ConvertTo-Json)
 # ============================================
 function Start-CleanerServer {
     $listener = New-Object System.Net.HttpListener
-    $listener.Prefixes.Add("http://localhost:8844/")
+    $listener.Prefixes.Add("http://localhost:$($Global:ServerPort)/")
     $listener.Start()
-    Write-Log "Server started at http://localhost:8844"
 
+    Log-Action "Server" "SUCCESS" "Started on port $($Global:ServerPort)"
+
+    # Auto-launch hosted UI
     if (-not $NoBrowser) {
-        Start-Process "http://localhost:8844"
-        Write-Log "Browser opened"
+        Start-Process $Global:HostedUI
+        Log-Action "Browser" "SUCCESS" "Opened hosted UI: $($Global:HostedUI)"
     }
 
     while ($listener.IsListening) {
@@ -643,17 +700,36 @@ function Start-CleanerServer {
         $path = $request.Url.LocalPath
 
         try {
-            if ($path -eq "/" -or $path -eq "/index.html") {
-                $buffer = [System.Text.Encoding]::UTF8.GetBytes($HtmlUI)
-                $response.ContentType = "text/html"
+            if ($path -eq "/api/status") {
+                $license = Check-License
+                $status = @{
+                    licensed = $license.Valid
+                    hwid = Get-HWID
+                    user = $env:USERNAME
+                    computer = $env:COMPUTERNAME
+                    message = $license.Message
+                    oceanDetected = Test-OceanCheck
+                    napseDetected = Test-NAPSE
+                } | ConvertTo-Json
+                $buffer = [System.Text.Encoding]::UTF8.GetBytes($status)
+                $response.ContentType = "application/json"
+                $response.ContentLength64 = $buffer.Length
+                $response.OutputStream.Write($buffer, 0, $buffer.Length)
+            }
+            elseif ($path -eq "/api/validate") {
+                $reader = New-Object System.IO.StreamReader($request.InputStream)
+                $body = $reader.ReadToEnd()
+                $reader.Close()
+                $data = $body | ConvertFrom-Json
+                $result = Validate-License -Key $data.key
+                $json = $result | ConvertTo-Json
+                $buffer = [System.Text.Encoding]::UTF8.GetBytes($json)
+                $response.ContentType = "application/json"
                 $response.ContentLength64 = $buffer.Length
                 $response.OutputStream.Write($buffer, 0, $buffer.Length)
             }
             elseif ($path.StartsWith("/api/")) {
                 $action = $path.Replace("/api/", "")
-                $func = $action -replace "^(.)", { $_.Groups[1].Value.ToUpper() } -replace "-([a-z])", { $_.Groups[1].Value.ToUpper() }
-                $func = $func -replace "^.", { $_.Value.ToUpper() }
-                # Map action names to function names
                 $funcMap = @{
                     "cleanBam" = "Clean-Bam"
                     "cleanSystemInformer" = "Clean-SystemInformer"
@@ -690,15 +766,21 @@ function Start-CleanerServer {
                     "createNewJournal" = "Create-NewJournal"
                     "cleanRegedit" = "Clean-Regedit"
                     "cleanShellbag" = "Clean-Shellbag"
-                    "cleanAll" = "Clean-All"
+                    "systemOptimization" = "Start-SystemOptimization"
                 }
                 $func = $funcMap[$action]
 
-                try {
-                    Invoke-Expression $func
-                    $result = '{"success":true,"message":"Clean completed"}'
-                } catch {
-                    $result = "{\"success\":false,\"error\":\"$($_.Exception.Message)\"}"
+                # Check license before executing
+                $license = Check-License
+                if (-not $license.Valid) {
+                    $result = @{ success = $false; error = "License invalid or not activated"; needsLicense = $true } | ConvertTo-Json
+                } else {
+                    try {
+                        Invoke-Expression $func
+                        $result = @{ success = $true; message = "Operation completed" } | ConvertTo-Json
+                    } catch {
+                        $result = @{ success = $false; error = $_.Exception.Message } | ConvertTo-Json
+                    }
                 }
 
                 $buffer = [System.Text.Encoding]::UTF8.GetBytes($result)
@@ -712,7 +794,7 @@ function Start-CleanerServer {
         }
         catch {
             $response.StatusCode = 500
-            $err = "{\"error\":\"$($_.Exception.Message)\"}"
+            $err = @{ error = $_.Exception.Message } | ConvertTo-Json
             $buffer = [System.Text.Encoding]::UTF8.GetBytes($err)
             $response.ContentType = "application/json"
             $response.ContentLength64 = $buffer.Length
@@ -727,8 +809,15 @@ function Start-CleanerServer {
 # ============================================
 # MAIN
 # ============================================
+Initialize-LicenseSystem
+
+if ($ValidateLicense) {
+    $result = Validate-License -Key $LicenseKey
+    Write-Output ($result | ConvertTo-Json)
+    exit
+}
+
 if ($Action) {
-    # CLI mode
     $funcMap = @{
         "cleanBam" = "Clean-Bam"
         "cleanSystemInformer" = "Clean-SystemInformer"
@@ -765,17 +854,12 @@ if ($Action) {
         "createNewJournal" = "Create-NewJournal"
         "cleanRegedit" = "Clean-Regedit"
         "cleanShellbag" = "Clean-Shellbag"
-        "cleanAll" = "Clean-All"
+        "systemOptimization" = "Start-SystemOptimization"
     }
     $func = $funcMap[$Action]
     if ($func) { Invoke-Expression $func }
-    else { Write-Log "Unknown action: $Action" "ERROR"; exit 1 }
+    else { Log-Action "CLI" "ERROR" "Unknown action: $Action"; exit 1 }
 } else {
-    # GUI mode - start web server
-    Write-Log "========================================"
-    Write-Log "xXx Cleaner - Easy Edition"
-    Write-Log "NAPSE-Aware | Silent | No Dependencies"
-    Write-Log "========================================"
-    Write-Log "Starting server..."
+    Log-Action "Startup" "SUCCESS" "xXx Cleaner Engine Started | Ocean Check: $(Test-OceanCheck) | NAPSE: $(Test-NAPSE)"
     Start-CleanerServer
 }
