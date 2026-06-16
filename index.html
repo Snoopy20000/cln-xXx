@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>xXx Cleaner</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #0a0a0a;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .bg-gradient {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(ellipse at 20% 50%, rgba(147,112,219,0.03) 0%, transparent 50%),
+                        radial-gradient(ellipse at 80% 50%, rgba(147,112,219,0.03) 0%, transparent 50%),
+                        linear-gradient(135deg, #0a0a0a 0%, #111 50%, #0a0a0a 100%);
+            z-index: -1;
+        }
+
+        .container {
+            width: 520px;
+            background: rgba(15,15,15,0.95);
+            border: 1px solid rgba(147,112,219,0.3);
+            border-radius: 8px;
+            box-shadow: 0 0 0 1px rgba(147,112,219,0.1), 0 20px 60px rgba(0,0,0,0.8), 0 0 40px rgba(147,112,219,0.05);
+            padding: 0; position: relative; overflow: hidden;
+        }
+
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 20px;
+            background: rgba(147,112,219,0.05);
+            border-bottom: 1px solid rgba(147,112,219,0.1);
+        }
+
+        .logo { font-size: 18px; font-weight: 700; color: #9370db; letter-spacing: 2px; text-shadow: 0 0 10px rgba(147,112,219,0.3); }
+
+        .window-controls { display: flex; gap: 8px; align-items: center; }
+
+        .stream-toggle {
+            font-size: 10px; color: #666; letter-spacing: 1px;
+            cursor: pointer; padding: 4px 8px; border-radius: 4px;
+            transition: all 0.2s; user-select: none;
+        }
+        .stream-toggle:hover { color: #9370db; background: rgba(147,112,219,0.1); }
+        .stream-toggle.active { color: #9370db; background: rgba(147,112,219,0.2); }
+
+        .close-btn { width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,0.1); cursor: pointer; transition: all 0.2s; }
+        .close-btn:hover { background: rgba(255,100,100,0.5); }
+
+        .content { padding: 24px 20px; }
+
+        .title { text-align: center; font-size: 14px; font-weight: 600; color: #e0e0e0; margin-bottom: 16px; letter-spacing: 1px; }
+
+        .dropdown {
+            width: 100%; padding: 10px 14px; background: rgba(30,30,30,0.8);
+            border: 1px solid rgba(147,112,219,0.2); border-radius: 6px;
+            color: #e0e0e0; font-size: 12px; cursor: pointer; margin-bottom: 20px;
+            outline: none; transition: all 0.2s;
+        }
+        .dropdown:hover { border-color: rgba(147,112,219,0.4); }
+        .dropdown:focus { border-color: rgba(147,112,219,0.6); box-shadow: 0 0 0 2px rgba(147,112,219,0.1); }
+
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+
+        .btn {
+            padding: 10px 8px; background: rgba(30,30,30,0.6);
+            border: 1px solid rgba(255,255,255,0.05); border-radius: 4px;
+            color: #888; font-size: 11px; cursor: pointer; text-align: center;
+            letter-spacing: 0.5px; transition: all 0.2s; position: relative; overflow: hidden;
+        }
+        .btn:hover { background: rgba(147,112,219,0.1); border-color: rgba(147,112,219,0.3); color: #e0e0e0; transform: translateY(-1px); }
+        .btn.active { background: rgba(147,112,219,0.15); border-color: rgba(147,112,219,0.4); color: #9370db; }
+        .btn.cleaning { animation: pulse 1.5s infinite; }
+        .btn.success { border-color: rgba(100,200,100,0.4); color: #64c864; }
+        .btn.error { border-color: rgba(200,100,100,0.4); color: #c86464; }
+        .btn.system-opt { background: rgba(147,112,219,0.2); color: #9370db; font-weight: 600; border-color: rgba(147,112,219,0.4); }
+        .btn.system-opt:hover { background: rgba(147,112,219,0.3); }
+
+        @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(147,112,219,0.2); } 50% { box-shadow: 0 0 0 4px rgba(147,112,219,0); } }
+
+        .footer { display: flex; justify-content: space-between; padding: 12px 20px; border-top: 1px solid rgba(147,112,219,0.1); font-size: 11px; color: #666; }
+        .footer-btn { cursor: pointer; transition: color 0.2s; }
+        .footer-btn:hover { color: #9370db; }
+
+        .progress-bar { position: absolute; bottom: 0; left: 0; height: 2px; background: linear-gradient(90deg, #9370db, #b19cd9); transition: width 0.3s; width: 0%; }
+
+        .console {
+            position: fixed; bottom: 20px; right: 20px; width: 400px; max-height: 300px;
+            background: rgba(10,10,10,0.95); border: 1px solid rgba(147,112,219,0.2);
+            border-radius: 6px; padding: 12px; font-family: Consolas, monospace;
+            font-size: 10px; color: #888; overflow-y: auto; display: none; z-index: 1000;
+        }
+        .console.visible { display: block; }
+        .console-line { margin: 2px 0; opacity: 0; animation: fadeIn 0.3s forwards; }
+        @keyframes fadeIn { to { opacity: 1; } }
+        .console-line.success { color: #64c864; }
+        .console-line.error { color: #c86464; }
+        .console-line.info { color: #9370db; }
+        .console-line.warning { color: #ffa500; }
+
+        .category-label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 2px; margin: 16px 0 8px 0; padding-left: 4px; }
+        .category-label:first-of-type { margin-top: 0; }
+
+        .license-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 2000;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .license-box {
+            background: rgba(15,15,15,0.95); border: 1px solid rgba(147,112,219,0.3);
+            border-radius: 8px; padding: 32px; width: 400px;
+            box-shadow: 0 0 40px rgba(147,112,219,0.1);
+        }
+        .license-title { font-size: 18px; color: #9370db; text-align: center; margin-bottom: 20px; font-weight: 600; }
+        .license-input {
+            width: 100%; padding: 12px; background: rgba(30,30,30,0.8);
+            border: 1px solid rgba(147,112,219,0.2); border-radius: 6px;
+            color: #e0e0e0; font-size: 14px; margin-bottom: 12px; outline: none;
+        }
+        .license-input:focus { border-color: rgba(147,112,219,0.6); }
+        .license-btn {
+            width: 100%; padding: 12px; background: rgba(147,112,219,0.2);
+            border: 1px solid rgba(147,112,219,0.4); border-radius: 6px;
+            color: #9370db; font-size: 14px; cursor: pointer; font-weight: 600;
+            transition: all 0.2s;
+        }
+        .license-btn:hover { background: rgba(147,112,219,0.3); }
+        .license-status { font-size: 11px; text-align: center; margin-top: 12px; min-height: 16px; }
+        .license-status.error { color: #c86464; }
+        .license-status.success { color: #64c864; }
+        .license-status.info { color: #9370db; }
+
+        .hwid-display { font-size: 10px; color: #666; text-align: center; margin-top: 8px; font-family: Consolas, monospace; }
+
+        .streammode-compact .btn { padding: 6px 4px; font-size: 9px; }
+        .streammode-compact .category-label { font-size: 8px; margin: 8px 0 4px 0; }
+        .streammode-compact .content { padding: 12px 10px; }
+        .streammode-compact .title { font-size: 12px; margin-bottom: 8px; }
+        .streammode-compact .dropdown { padding: 6px 10px; font-size: 10px; margin-bottom: 10px; }
+        .streammode-compact .container { width: 400px; }
+
+        .server-status {
+            position: fixed; top: 20px; right: 20px;
+            padding: 8px 12px; background: rgba(15,15,15,0.9);
+            border: 1px solid rgba(147,112,219,0.2); border-radius: 6px;
+            font-size: 10px; color: #666; z-index: 1000;
+        }
+        .server-status.connected { border-color: rgba(100,200,100,0.4); color: #64c864; }
+        .server-status.disconnected { border-color: rgba(200,100,100,0.4); color: #c86464; }
+        .server-status.bot-connected { border-color: rgba(147,112,219,0.4); color: #9370db; }
+
+        .launch-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 3000;
+            display: flex; justify-content: center; align-items: center; flex-direction: column;
+        }
+        .launch-box {
+            background: rgba(15,15,15,0.95); border: 1px solid rgba(147,112,219,0.3);
+            border-radius: 8px; padding: 32px; width: 450px; text-align: center;
+        }
+        .launch-title { font-size: 20px; color: #9370db; margin-bottom: 16px; font-weight: 600; }
+        .launch-text { font-size: 12px; color: #888; margin-bottom: 20px; line-height: 1.6; }
+        .launch-btn {
+            padding: 12px 24px; background: rgba(147,112,219,0.2);
+            border: 1px solid rgba(147,112,219,0.4); border-radius: 6px;
+            color: #9370db; font-size: 14px; cursor: pointer; font-weight: 600;
+            transition: all 0.2s; margin: 4px;
+        }
+        .launch-btn:hover { background: rgba(147,112,219,0.3); }
+        .launch-code {
+            background: rgba(30,30,30,0.8); border: 1px solid rgba(147,112,219,0.2);
+            border-radius: 4px; padding: 12px; font-family: Consolas, monospace;
+            font-size: 10px; color: #888; margin: 12px 0; text-align: left; word-break: break-all;
+        }
+
+        .api-config {
+            position: fixed; top: 20px; left: 20px;
+            padding: 8px 12px; background: rgba(15,15,15,0.9);
+            border: 1px solid rgba(147,112,219,0.2); border-radius: 6px;
+            font-size: 10px; color: #666; z-index: 1000; cursor: pointer;
+        }
+        .api-config:hover { border-color: rgba(147,112,219,0.4); color: #9370db; }
+    </style>
+</head>
+<body>
+    <div class="bg-gradient"></div>
+    <div class="api-config" id="apiConfig" onclick="showApiConfig()">API: Config</div>
+    <div class="server-status disconnected" id="serverStatus">Engine: Offline</div>
+
+    <div class="launch-overlay" id="launchOverlay">
+        <div class="launch-box">
+            <div class="launch-title">xXx Cleaner Engine</div>
+            <div class="launch-text">
+                The cleaning engine is not running on your machine.<br>
+                Run the PowerShell script as Administrator to start the engine.<br>
+                Or copy the command below and run it in PowerShell.
+            </div>
+            <div class="launch-code" id="launchCode">powershell -ExecutionPolicy Bypass -File xXxCleaner.ps1</div>
+            <button class="launch-btn" onclick="copyLaunchCode()">Copy Command</button>
+            <button class="launch-btn" onclick="checkServerManual()">Retry Connection</button>
+            <div class="license-status" id="launchStatus"></div>
+        </div>
+    </div>
+
+    <div class="license-overlay" id="licenseOverlay" style="display: none;">
+        <div class="license-box">
+            <div class="license-title">xXx License Activation</div>
+            <input type="text" class="license-input" id="licenseKey" placeholder="Enter your license key...">
+            <button class="license-btn" id="activateBtn" onclick="activateLicense()">Activate</button>
+            <div class="license-status" id="licenseStatus"></div>
+            <div class="hwid-display" id="hwidDisplay">HWID: Loading...</div>
+        </div>
+    </div>
+
+    <div class="container" id="mainContainer">
+        <div class="header">
+            <div class="logo">xXx</div>
+            <div class="window-controls">
+                <span class="stream-toggle" id="streamToggle" onclick="toggleStreammode()">Streammode</span>
+                <div class="close-btn" onclick="window.close()"></div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="title">String Cleaner</div>
+
+            <select class="dropdown" id="modeSelect">
+                <option value="standard">Standard Clean</option>
+                <option value="deep">Deep Clean (NAPSE-Aware)</option>
+                <option value="stealth">Stealth Mode (Silent)</option>
+                <option value="forensic">Forensic Wipe</option>
+            </select>
+
+            <div class="category-label">System Traces</div>
+            <div class="grid">
+                <button class="btn" data-action="cleanBam">Clean Bam</button>
+                <button class="btn" data-action="cleanSystemInformer">Clean System Informer</button>
+                <button class="btn" data-action="cleanSeeShells">Clean SeeShells</button>
+                <button class="btn" data-action="cleanRecentDocs">Clean RecentDocs</button>
+                <button class="btn" data-action="cleanRecuva">Clean Recuva</button>
+                <button class="btn" data-action="bypassEverything">Bypass Everything</button>
+                <button class="btn" data-action="cleanPreviousFiles">Clean PreviousFiles</button>
+                <button class="btn" data-action="cleanMuiCache">MuiCache</button>
+            </div>
+
+            <div class="category-label">Application Traces</div>
+            <div class="grid">
+                <button class="btn" data-action="cleanArchistory">Clean Archistory</button>
+                <button class="btn" data-action="cleanNvidia">Clean Nvidia</button>
+                <button class="btn" data-action="cleanPsHistory">PS History Wipe</button>
+                <button class="btn" data-action="cleanDataUsage">Clean Data Usage</button>
+                <button class="btn" data-action="cleanDnsCache">Clean DNS Cache</button>
+                <button class="btn" data-action="clearWinDef">Clear Win Def Traces</button>
+                <button class="btn" data-action="cleanAmcache">Clean Amcache</button>
+                <button class="btn" data-action="cleanWinSearch">Windows Search History</button>
+            </div>
+
+            <div class="category-label">User Activity</div>
+            <div class="grid">
+                <button class="btn" data-action="cleanJumpLists">Clean Jump Lists</button>
+                <button class="btn" data-action="cleanAppSwitched">Clean AppSwitched</button>
+                <button class="btn" data-action="cleanWinTemp">Clean Windows Temp</button>
+                <button class="btn" data-action="cleanPrefetch">Clean Prefetch</button>
+                <button class="btn" data-action="cleanCrashdumps">Clean Crashdumps</button>
+                <button class="btn" data-action="cleanRecent">Clean Recent</button>
+                <button class="btn" data-action="cleanEventLog">Clean Event Log</button>
+                <button class="btn" data-action="cleanHistory">Clean History</button>
+            </div>
+
+            <div class="category-label">Registry & Deep</div>
+            <div class="grid">
+                <button class="btn" data-action="cleanJornatracer">Clean Jornatracer</button>
+                <button class="btn" data-action="disableServices">Disabl Services</button>
+                <button class="btn" data-action="cleanAppcompat">Clean AppcompatCache</button>
+                <button class="btn" data-action="cleanLastActivity">Clean Last Activity</button>
+                <button class="btn" data-action="cleanUserAssist">Clean User Assist</button>
+                <button class="btn" data-action="cleanRegseeker">Clean Regseeker</button>
+                <button class="btn" data-action="cleanBrowserHistory">Clean Browser History</button>
+                <button class="btn" data-action="cleanRegistryEditor">Clean Registry Editor</button>
+            </div>
+
+            <div class="category-label">Advanced</div>
+            <div class="grid">
+                <button class="btn" data-action="createNewJournal">Create New Journal</button>
+                <button class="btn" data-action="cleanRegedit">Clean Regedit</button>
+                <button class="btn" data-action="cleanShellbag">Clean Shellbag</button>
+                <button class="btn system-opt" data-action="systemOptimization">System Optimization</button>
+            </div>
+        </div>
+
+        <div class="footer">
+            <span class="footer-btn" onclick="showPage('back')">&lt;- Back</span>
+            <span class="footer-btn" onclick="showPage('more')">More -&gt;</span>
+        </div>
+
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="console" id="console"></div>
+
+    <script>
+        // ============================================
+        // CONFIGURATION - Update these URLs
+        // ============================================
+        const LOCAL_API = 'http://localhost:8844/api';
+        const BOT_API = 'https://YOUR_BOT_HOST/api'; // e.g., https://yourbot.fly.dev/api or http://93.115.101.180:8080/api
+
+        let useBotApi = false;
+        let currentApi = LOCAL_API;
+
+        const consoleEl = document.getElementById('console');
+        const progressBar = document.getElementById('progressBar');
+        const serverStatus = document.getElementById('serverStatus');
+        const launchOverlay = document.getElementById('launchOverlay');
+        const licenseOverlay = document.getElementById('licenseOverlay');
+        let isLicensed = false;
+        let streammodeActive = false;
+        let serverConnected = false;
+        let botConnected = false;
+        let currentHWID = '';
+
+        function log(msg, type='info') {
+            const line = document.createElement('div');
+            line.className = `console-line ${type}`;
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            consoleEl.appendChild(line);
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+            consoleEl.classList.add('visible');
+        }
+
+        function showApiConfig() {
+            const newUrl = prompt('Enter Bot API URL (leave empty for local only):\n\nExamples:\n- https://yourbot.fly.dev/api\n- http://93.115.101.180:8080/api\n- http://localhost:8080/api', BOT_API);
+            if (newUrl !== null) {
+                if (newUrl.trim() === '') {
+                    useBotApi = false;
+                    currentApi = LOCAL_API;
+                    document.getElementById('apiConfig').textContent = 'API: Local';
+                    log('Switched to local API only', 'info');
+                } else {
+                    useBotApi = true;
+                    BOT_API = newUrl.trim();
+                    currentApi = BOT_API;
+                    document.getElementById('apiConfig').textContent = 'API: Bot';
+                    log('Switched to bot API: ' + BOT_API, 'info');
+                    checkBotApi();
+                }
+            }
+        }
+
+        async function checkBotApi() {
+            try {
+                const res = await fetch(`${BOT_API}/status`, { method: 'GET', mode: 'cors' });
+                if (res.ok) {
+                    botConnected = true;
+                    const data = await res.json();
+                    log(`Bot API connected | Keys: ${data.total_keys} | Active: ${data.active_keys}`, 'success');
+                    return true;
+                }
+            } catch (e) {
+                botConnected = false;
+            }
+            return false;
+        }
+
+        async function checkLocalServer() {
+            try {
+                const res = await fetch(`${LOCAL_API}/status`, { method: 'GET', mode: 'cors' });
+                if (res.ok) {
+                    serverConnected = true;
+                    serverStatus.textContent = 'Engine: Online';
+                    serverStatus.className = 'server-status connected';
+                    launchOverlay.style.display = 'none';
+
+                    const data = await res.json();
+                    currentHWID = data.hwid || '';
+
+                    if (data.licensed) {
+                        licenseOverlay.style.display = 'none';
+                        isLicensed = true;
+                        log('License validated (local)', 'success');
+                    } else {
+                        licenseOverlay.style.display = 'flex';
+                        document.getElementById('hwidDisplay').textContent = `HWID: ${currentHWID}`;
+                    }
+
+                    if (data.oceanDetected) {
+                        log('⚠️ Ocean Anti-Cheat detected - bypass applied', 'warning');
+                    }
+                    if (data.napseDetected) {
+                        log('⚠️ NAPSE indicators detected - maximum stealth mode', 'warning');
+                    }
+                    return true;
+                }
+            } catch (e) {
+                serverConnected = false;
+                serverStatus.textContent = 'Engine: Offline';
+                serverStatus.className = 'server-status disconnected';
+                if (!botConnected) {
+                    launchOverlay.style.display = 'flex';
+                }
+            }
+            return false;
+        }
+
+        async function checkServer() {
+            const localOk = await checkLocalServer();
+            if (useBotApi && !localOk) {
+                await checkBotApi();
+            }
+        }
+
+        function checkServerManual() {
+            document.getElementById('launchStatus').textContent = 'Checking...';
+            document.getElementById('launchStatus').className = 'license-status info';
+            checkServer().then(() => {
+                if (serverConnected || botConnected) {
+                    document.getElementById('launchStatus').textContent = 'Connected!';
+                    document.getElementById('launchStatus').className = 'license-status success';
+                } else {
+                    document.getElementById('launchStatus').textContent = 'Still offline. Run PowerShell as Administrator.';
+                    document.getElementById('launchStatus').className = 'license-status error';
+                }
+            });
+        }
+
+        function copyLaunchCode() {
+            const code = document.getElementById('launchCode').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                document.getElementById('launchStatus').textContent = 'Copied to clipboard!';
+                document.getElementById('launchStatus').className = 'license-status success';
+            });
+        }
+
+        async function activateLicense() {
+            const key = document.getElementById('licenseKey').value.trim();
+            const status = document.getElementById('licenseStatus');
+
+            if (!key) {
+                status.textContent = 'Please enter a license key';
+                status.className = 'license-status error';
+                return;
+            }
+
+            status.textContent = 'Validating...';
+            status.className = 'license-status info';
+
+            // Try bot API first if configured
+            if (useBotApi && botConnected) {
+                try {
+                    const res = await fetch(`${BOT_API}/validate`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ key: key, hwid: currentHWID, user: 'webuser', computer: 'browser' })
+                    });
+
+                    const data = await res.json();
+
+                    if (data.valid) {
+                        status.textContent = data.message || 'License activated!';
+                        status.className = 'license-status success';
+                        setTimeout(() => {
+                            licenseOverlay.style.display = 'none';
+                            isLicensed = true;
+                            log('License activated via Bot API', 'success');
+                        }, 1500);
+                        return;
+                    } else {
+                        status.textContent = data.message || 'Invalid license';
+                        status.className = 'license-status error';
+                        return;
+                    }
+                } catch (e) {
+                    log('Bot API validation failed, trying local...', 'warning');
+                }
+            }
+
+            // Fallback to local API
+            try {
+                const res = await fetch(`${LOCAL_API}/validate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key: key })
+                });
+
+                const data = await res.json();
+
+                if (data.Valid) {
+                    status.textContent = data.Message || 'License activated!';
+                    status.className = 'license-status success';
+                    setTimeout(() => {
+                        licenseOverlay.style.display = 'none';
+                        isLicensed = true;
+                        log('License activated via local engine', 'success');
+                    }, 1500);
+                } else {
+                    status.textContent = data.Message || 'Invalid license key';
+                    status.className = 'license-status error';
+                }
+            } catch (e) {
+                status.textContent = 'Cannot connect. Run PowerShell as Administrator first.';
+                status.className = 'license-status error';
+            }
+        }
+
+        async function executeClean(action, btn) {
+            if (!isLicensed) {
+                log('License required. Activate first.', 'error');
+                return;
+            }
+
+            if (!serverConnected) {
+                log('Engine offline. Start PowerShell backend first.', 'error');
+                return;
+            }
+
+            btn.classList.add('cleaning');
+            log(`Initiating ${action}...`, 'info');
+
+            try {
+                const res = await fetch(`${LOCAL_API}/${action}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mode: document.getElementById('modeSelect').value })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    btn.classList.remove('cleaning');
+                    btn.classList.add('success');
+                    log(`${action} completed successfully`, 'success');
+                    setTimeout(() => btn.classList.remove('success'), 2000);
+                } else if (data.needsLicense) {
+                    btn.classList.remove('cleaning');
+                    log('License invalid or expired', 'error');
+                    licenseOverlay.style.display = 'flex';
+                } else {
+                    throw new Error(data.error || 'Unknown error');
+                }
+            } catch (err) {
+                btn.classList.remove('cleaning');
+                btn.classList.add('error');
+                log(`${action} failed: ${err.message}`, 'error');
+                setTimeout(() => btn.classList.remove('error'), 2000);
+            }
+        }
+
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const action = btn.dataset.action;
+                if (action === 'systemOptimization') {
+                    runSystemOptimization();
+                } else {
+                    executeClean(action, btn);
+                }
+            });
+        });
+
+        async function runSystemOptimization() {
+            const btn = document.querySelector('[data-action="systemOptimization"]');
+            const buttons = document.querySelectorAll('.btn:not([data-action="systemOptimization"])');
+            const total = buttons.length;
+            let current = 0;
+
+            btn.classList.add('cleaning');
+            log('=== SYSTEM OPTIMIZATION STARTED ===', 'info');
+
+            for (const b of buttons) {
+                current++;
+                progressBar.style.width = `${(current / total) * 100}%`;
+                await executeClean(b.dataset.action, b);
+                await new Promise(r => setTimeout(r, 500));
+            }
+
+            progressBar.style.width = '100%';
+            btn.classList.remove('cleaning');
+            btn.classList.add('success');
+            log('=== SYSTEM OPTIMIZATION COMPLETE ===', 'success');
+            setTimeout(() => {
+                progressBar.style.width = '0%';
+                btn.classList.remove('success');
+            }, 2000);
+        }
+
+        function toggleStreammode() {
+            streammodeActive = !streammodeActive;
+            const toggle = document.getElementById('streamToggle');
+            const container = document.getElementById('mainContainer');
+
+            if (streammodeActive) {
+                toggle.classList.add('active');
+                toggle.textContent = 'Streammode: ON';
+                container.classList.add('streammode-compact');
+                log('Streammode enabled - compact UI', 'info');
+            } else {
+                toggle.classList.remove('active');
+                toggle.textContent = 'Streammode';
+                container.classList.remove('streammode-compact');
+                log('Streammode disabled', 'info');
+            }
+        }
+
+        function showPage(dir) {
+            log(`Navigating ${dir}...`, 'info');
+        }
+
+        // Auto-check server on load and every 5 seconds
+        checkServer();
+        setInterval(checkServer, 5000);
+
+        log('xXx Cleaner initialized', 'info');
+        log('NAPSE-aware evasion active', 'info');
+        log('Ocean Check bypass active', 'info');
+        log('Waiting for engine connection...', 'warning');
+    </script>
+</body>
+</html>
