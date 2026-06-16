@@ -5,11 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>xXx Cleaner</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             background: #0a0a0a;
@@ -23,247 +19,165 @@
         }
 
         .bg-gradient {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-                radial-gradient(ellipse at 20% 50%, rgba(147, 112, 219, 0.03) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 50%, rgba(147, 112, 219, 0.03) 0%, transparent 50%),
-                linear-gradient(135deg, #0a0a0a 0%, #111111 50%, #0a0a0a 100%);
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(ellipse at 20% 50%, rgba(147,112,219,0.03) 0%, transparent 50%),
+                        radial-gradient(ellipse at 80% 50%, rgba(147,112,219,0.03) 0%, transparent 50%),
+                        linear-gradient(135deg, #0a0a0a 0%, #111 50%, #0a0a0a 100%);
             z-index: -1;
         }
 
         .container {
             width: 520px;
-            background: rgba(15, 15, 15, 0.95);
-            border: 1px solid rgba(147, 112, 219, 0.3);
+            background: rgba(15,15,15,0.95);
+            border: 1px solid rgba(147,112,219,0.3);
             border-radius: 8px;
-            box-shadow: 
-                0 0 0 1px rgba(147, 112, 219, 0.1),
-                0 20px 60px rgba(0, 0, 0, 0.8),
-                0 0 40px rgba(147, 112, 219, 0.05);
-            padding: 0;
-            position: relative;
-            overflow: hidden;
+            box-shadow: 0 0 0 1px rgba(147,112,219,0.1), 0 20px 60px rgba(0,0,0,0.8), 0 0 40px rgba(147,112,219,0.05);
+            padding: 0; position: relative; overflow: hidden;
         }
 
         .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: flex; justify-content: space-between; align-items: center;
             padding: 12px 20px;
-            background: rgba(147, 112, 219, 0.05);
-            border-bottom: 1px solid rgba(147, 112, 219, 0.1);
+            background: rgba(147,112,219,0.05);
+            border-bottom: 1px solid rgba(147,112,219,0.1);
         }
 
-        .logo {
-            font-size: 18px;
-            font-weight: 700;
-            color: #9370db;
-            letter-spacing: 2px;
-            text-shadow: 0 0 10px rgba(147, 112, 219, 0.3);
-        }
+        .logo { font-size: 18px; font-weight: 700; color: #9370db; letter-spacing: 2px; text-shadow: 0 0 10px rgba(147,112,219,0.3); }
 
-        .window-controls {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
+        .window-controls { display: flex; gap: 8px; align-items: center; }
 
-        .stream-mode {
-            font-size: 10px;
-            color: #666;
-            margin-right: 8px;
-            letter-spacing: 1px;
+        .stream-toggle {
+            font-size: 10px; color: #666; letter-spacing: 1px;
+            cursor: pointer; padding: 4px 8px; border-radius: 4px;
+            transition: all 0.2s; user-select: none;
         }
+        .stream-toggle:hover { color: #9370db; background: rgba(147,112,219,0.1); }
+        .stream-toggle.active { color: #9370db; background: rgba(147,112,219,0.2); }
 
-        .close-btn {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.1);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
+        .close-btn { width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,0.1); cursor: pointer; transition: all 0.2s; }
+        .close-btn:hover { background: rgba(255,100,100,0.5); }
 
-        .close-btn:hover {
-            background: rgba(255, 100, 100, 0.5);
-        }
+        .content { padding: 24px 20px; }
 
-        .content {
-            padding: 24px 20px;
-        }
-
-        .title {
-            text-align: center;
-            font-size: 14px;
-            font-weight: 600;
-            color: #e0e0e0;
-            margin-bottom: 16px;
-            letter-spacing: 1px;
-        }
+        .title { text-align: center; font-size: 14px; font-weight: 600; color: #e0e0e0; margin-bottom: 16px; letter-spacing: 1px; }
 
         .dropdown {
-            width: 100%;
-            padding: 10px 14px;
-            background: rgba(30, 30, 30, 0.8);
-            border: 1px solid rgba(147, 112, 219, 0.2);
-            border-radius: 6px;
-            color: #e0e0e0;
-            font-size: 12px;
-            cursor: pointer;
-            margin-bottom: 20px;
-            outline: none;
-            transition: all 0.2s;
+            width: 100%; padding: 10px 14px; background: rgba(30,30,30,0.8);
+            border: 1px solid rgba(147,112,219,0.2); border-radius: 6px;
+            color: #e0e0e0; font-size: 12px; cursor: pointer; margin-bottom: 20px;
+            outline: none; transition: all 0.2s;
         }
+        .dropdown:hover { border-color: rgba(147,112,219,0.4); }
+        .dropdown:focus { border-color: rgba(147,112,219,0.6); box-shadow: 0 0 0 2px rgba(147,112,219,0.1); }
 
-        .dropdown:hover {
-            border-color: rgba(147, 112, 219, 0.4);
-        }
-
-        .dropdown:focus {
-            border-color: rgba(147, 112, 219, 0.6);
-            box-shadow: 0 0 0 2px rgba(147, 112, 219, 0.1);
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 20px;
-        }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
 
         .btn {
-            padding: 10px 8px;
-            background: rgba(30, 30, 30, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 4px;
-            color: #888;
-            font-size: 11px;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-align: center;
-            letter-spacing: 0.5px;
-            position: relative;
-            overflow: hidden;
+            padding: 10px 8px; background: rgba(30,30,30,0.6);
+            border: 1px solid rgba(255,255,255,0.05); border-radius: 4px;
+            color: #888; font-size: 11px; cursor: pointer; text-align: center;
+            letter-spacing: 0.5px; transition: all 0.2s; position: relative; overflow: hidden;
         }
+        .btn:hover { background: rgba(147,112,219,0.1); border-color: rgba(147,112,219,0.3); color: #e0e0e0; transform: translateY(-1px); }
+        .btn.active { background: rgba(147,112,219,0.15); border-color: rgba(147,112,219,0.4); color: #9370db; }
+        .btn.cleaning { animation: pulse 1.5s infinite; }
+        .btn.success { border-color: rgba(100,200,100,0.4); color: #64c864; }
+        .btn.error { border-color: rgba(200,100,100,0.4); color: #c86464; }
+        .btn.system-opt { background: rgba(147,112,219,0.2); color: #9370db; font-weight: 600; border-color: rgba(147,112,219,0.4); }
+        .btn.system-opt:hover { background: rgba(147,112,219,0.3); }
 
-        .btn:hover {
-            background: rgba(147, 112, 219, 0.1);
-            border-color: rgba(147, 112, 219, 0.3);
-            color: #e0e0e0;
-            transform: translateY(-1px);
-        }
+        @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(147,112,219,0.2); } 50% { box-shadow: 0 0 0 4px rgba(147,112,219,0); } }
 
-        .btn.active {
-            background: rgba(147, 112, 219, 0.15);
-            border-color: rgba(147, 112, 219, 0.4);
-            color: #9370db;
-        }
+        .footer { display: flex; justify-content: space-between; padding: 12px 20px; border-top: 1px solid rgba(147,112,219,0.1); font-size: 11px; color: #666; }
+        .footer-btn { cursor: pointer; transition: color 0.2s; }
+        .footer-btn:hover { color: #9370db; }
 
-        .btn.cleaning {
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(147, 112, 219, 0.2); }
-            50% { box-shadow: 0 0 0 4px rgba(147, 112, 219, 0); }
-        }
-
-        .btn.success {
-            border-color: rgba(100, 200, 100, 0.4);
-            color: #64c864;
-        }
-
-        .footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 20px;
-            border-top: 1px solid rgba(147, 112, 219, 0.1);
-            font-size: 11px;
-            color: #666;
-        }
-
-        .footer-btn {
-            cursor: pointer;
-            transition: color 0.2s;
-        }
-
-        .footer-btn:hover {
-            color: #9370db;
-        }
+        .progress-bar { position: absolute; bottom: 0; left: 0; height: 2px; background: linear-gradient(90deg, #9370db, #b19cd9); transition: width 0.3s; width: 0%; }
 
         .console {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 400px;
-            max-height: 300px;
-            background: rgba(10, 10, 10, 0.95);
-            border: 1px solid rgba(147, 112, 219, 0.2);
-            border-radius: 6px;
-            padding: 12px;
-            font-family: 'Consolas', 'Courier New', monospace;
-            font-size: 10px;
-            color: #888;
-            overflow-y: auto;
-            display: none;
-            z-index: 1000;
+            position: fixed; bottom: 20px; right: 20px; width: 400px; max-height: 300px;
+            background: rgba(10,10,10,0.95); border: 1px solid rgba(147,112,219,0.2);
+            border-radius: 6px; padding: 12px; font-family: Consolas, monospace;
+            font-size: 10px; color: #888; overflow-y: auto; display: none; z-index: 1000;
         }
-
-        .console.visible {
-            display: block;
-        }
-
-        .console-line {
-            margin: 2px 0;
-            opacity: 0;
-            animation: fadeIn 0.3s forwards;
-        }
-
-        @keyframes fadeIn {
-            to { opacity: 1; }
-        }
-
+        .console.visible { display: block; }
+        .console-line { margin: 2px 0; opacity: 0; animation: fadeIn 0.3s forwards; }
+        @keyframes fadeIn { to { opacity: 1; } }
         .console-line.success { color: #64c864; }
         .console-line.error { color: #c86464; }
         .console-line.info { color: #9370db; }
+        .console-line.warning { color: #ffa500; }
 
-        .progress-bar {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            height: 2px;
-            background: linear-gradient(90deg, #9370db, #b19cd9);
-            transition: width 0.3s;
-            width: 0%;
-        }
+        .category-label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 2px; margin: 16px 0 8px 0; padding-left: 4px; }
+        .category-label:first-of-type { margin-top: 0; }
 
-        .category-label {
-            font-size: 10px;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin: 16px 0 8px 0;
-            padding-left: 4px;
+        .license-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 2000;
+            display: flex; justify-content: center; align-items: center;
         }
+        .license-box {
+            background: rgba(15,15,15,0.95); border: 1px solid rgba(147,112,219,0.3);
+            border-radius: 8px; padding: 32px; width: 400px;
+            box-shadow: 0 0 40px rgba(147,112,219,0.1);
+        }
+        .license-title { font-size: 18px; color: #9370db; text-align: center; margin-bottom: 20px; font-weight: 600; }
+        .license-input {
+            width: 100%; padding: 12px; background: rgba(30,30,30,0.8);
+            border: 1px solid rgba(147,112,219,0.2); border-radius: 6px;
+            color: #e0e0e0; font-size: 14px; margin-bottom: 12px; outline: none;
+        }
+        .license-input:focus { border-color: rgba(147,112,219,0.6); }
+        .license-btn {
+            width: 100%; padding: 12px; background: rgba(147,112,219,0.2);
+            border: 1px solid rgba(147,112,219,0.4); border-radius: 6px;
+            color: #9370db; font-size: 14px; cursor: pointer; font-weight: 600;
+            transition: all 0.2s;
+        }
+        .license-btn:hover { background: rgba(147,112,219,0.3); }
+        .license-status { font-size: 11px; text-align: center; margin-top: 12px; min-height: 16px; }
+        .license-status.error { color: #c86464; }
+        .license-status.success { color: #64c864; }
+        .license-status.info { color: #9370db; }
 
-        .category-label:first-of-type {
-            margin-top: 0;
+        .hwid-display { font-size: 10px; color: #666; text-align: center; margin-top: 8px; font-family: Consolas, monospace; }
+
+        .streammode-compact .btn { padding: 6px 4px; font-size: 9px; }
+        .streammode-compact .category-label { font-size: 8px; margin: 8px 0 4px 0; }
+        .streammode-compact .content { padding: 12px 10px; }
+        .streammode-compact .title { font-size: 12px; margin-bottom: 8px; }
+        .streammode-compact .dropdown { padding: 6px 10px; font-size: 10px; margin-bottom: 10px; }
+        .streammode-compact .container { width: 400px; }
+
+        .server-status {
+            position: fixed; top: 20px; right: 20px;
+            padding: 8px 12px; background: rgba(15,15,15,0.9);
+            border: 1px solid rgba(147,112,219,0.2); border-radius: 6px;
+            font-size: 10px; color: #666; z-index: 1000;
         }
+        .server-status.connected { border-color: rgba(100,200,100,0.4); color: #64c864; }
+        .server-status.disconnected { border-color: rgba(200,100,100,0.4); color: #c86464; }
     </style>
 </head>
 <body>
     <div class="bg-gradient"></div>
+    <div class="server-status disconnected" id="serverStatus">Engine: Offline</div>
 
-    <div class="container">
+    <div class="license-overlay" id="licenseOverlay">
+        <div class="license-box">
+            <div class="license-title">xXx License Activation</div>
+            <input type="text" class="license-input" id="licenseKey" placeholder="Enter your license key...">
+            <button class="license-btn" id="activateBtn" onclick="activateLicense()">Activate</button>
+            <div class="license-status" id="licenseStatus"></div>
+            <div class="hwid-display" id="hwidDisplay">HWID: Loading...</div>
+        </div>
+    </div>
+
+    <div class="container" id="mainContainer">
         <div class="header">
             <div class="logo">xXx</div>
             <div class="window-controls">
-                <span class="stream-mode">Streammode</span>
+                <span class="stream-toggle" id="streamToggle" onclick="toggleStreammode()">Streammode</span>
                 <div class="close-btn" onclick="window.close()"></div>
             </div>
         </div>
@@ -331,7 +245,7 @@
                 <button class="btn" data-action="createNewJournal">Create New Journal</button>
                 <button class="btn" data-action="cleanRegedit">Clean Regedit</button>
                 <button class="btn" data-action="cleanShellbag">Clean Shellbag</button>
-                <button class="btn" data-action="cleanAll">CLEAN ALL</button>
+                <button class="btn system-opt" data-action="systemOptimization">System Optimization</button>
             </div>
         </div>
 
@@ -346,83 +260,188 @@
     <div class="console" id="console"></div>
 
     <script>
+        const API_BASE = 'http://localhost:8844/api';
         const consoleEl = document.getElementById('console');
         const progressBar = document.getElementById('progressBar');
+        const serverStatus = document.getElementById('serverStatus');
+        let isLicensed = false;
+        let streammodeActive = false;
 
-        function log(message, type = 'info') {
+        function log(msg, type='info') {
             const line = document.createElement('div');
             line.className = `console-line ${type}`;
-            line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
             consoleEl.appendChild(line);
             consoleEl.scrollTop = consoleEl.scrollHeight;
             consoleEl.classList.add('visible');
         }
 
+        async function checkServer() {
+            try {
+                const res = await fetch(`${API_BASE}/status`, { method: 'GET', mode: 'cors' });
+                if (res.ok) {
+                    serverStatus.textContent = 'Engine: Online';
+                    serverStatus.className = 'server-status connected';
+                    const data = await res.json();
+                    if (data.licensed) {
+                        document.getElementById('licenseOverlay').style.display = 'none';
+                        isLicensed = true;
+                        log('License validated (local)', 'success');
+                    }
+                    document.getElementById('hwidDisplay').textContent = `HWID: ${data.hwid || 'Unknown'}`;
+                    return true;
+                }
+            } catch (e) {
+                serverStatus.textContent = 'Engine: Offline';
+                serverStatus.className = 'server-status disconnected';
+            }
+            return false;
+        }
+
+        async function activateLicense() {
+            const key = document.getElementById('licenseKey').value.trim();
+            const status = document.getElementById('licenseStatus');
+
+            if (!key) {
+                status.textContent = 'Please enter a license key';
+                status.className = 'license-status error';
+                return;
+            }
+
+            status.textContent = 'Validating...';
+            status.className = 'license-status info';
+
+            try {
+                const res = await fetch(`${API_BASE}/validate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key: key })
+                });
+
+                const data = await res.json();
+
+                if (data.Valid) {
+                    status.textContent = data.Message || 'License activated!';
+                    status.className = 'license-status success';
+                    setTimeout(() => {
+                        document.getElementById('licenseOverlay').style.display = 'none';
+                        isLicensed = true;
+                        log('License activated and bound to this machine', 'success');
+                    }, 1500);
+                } else {
+                    status.textContent = data.Message || 'Invalid license key';
+                    status.className = 'license-status error';
+                }
+            } catch (e) {
+                status.textContent = 'Cannot connect to engine. Run PowerShell script as Administrator first.';
+                status.className = 'license-status error';
+            }
+        }
+
         async function executeClean(action, btn) {
+            if (!isLicensed) {
+                log('License required. Activate first.', 'error');
+                return;
+            }
+
             btn.classList.add('cleaning');
             log(`Initiating ${action}...`, 'info');
 
             try {
-                const response = await fetch(`http://localhost:8844/api/clean/${action}`, {
+                const res = await fetch(`${API_BASE}/${action}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ mode: document.getElementById('modeSelect').value })
                 });
 
-                const result = await response.json();
+                const data = await res.json();
 
-                if (result.success) {
+                if (data.success) {
                     btn.classList.remove('cleaning');
                     btn.classList.add('success');
                     log(`${action} completed successfully`, 'success');
                     setTimeout(() => btn.classList.remove('success'), 2000);
+                } else if (data.needsLicense) {
+                    btn.classList.remove('cleaning');
+                    log('License invalid or expired', 'error');
+                    document.getElementById('licenseOverlay').style.display = 'flex';
                 } else {
-                    throw new Error(result.error || 'Unknown error');
+                    throw new Error(data.error || 'Unknown error');
                 }
             } catch (err) {
                 btn.classList.remove('cleaning');
+                btn.classList.add('error');
                 log(`${action} failed: ${err.message}`, 'error');
-                // Fallback to PowerShell execution
-                log('Attempting PowerShell fallback...', 'info');
+                setTimeout(() => btn.classList.remove('error'), 2000);
             }
         }
 
         document.querySelectorAll('.btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const action = btn.dataset.action;
-                if (action === 'cleanAll') {
-                    runAllClean();
+                if (action === 'systemOptimization') {
+                    runSystemOptimization();
                 } else {
                     executeClean(action, btn);
                 }
             });
         });
 
-        async function runAllClean() {
-            const buttons = document.querySelectorAll('.btn:not([data-action="cleanAll"])');
+        async function runSystemOptimization() {
+            const btn = document.querySelector('[data-action="systemOptimization"]');
+            const buttons = document.querySelectorAll('.btn:not([data-action="systemOptimization"])');
             const total = buttons.length;
             let current = 0;
 
-            for (const btn of buttons) {
+            btn.classList.add('cleaning');
+            log('=== SYSTEM OPTIMIZATION STARTED ===', 'info');
+
+            for (const b of buttons) {
                 current++;
                 progressBar.style.width = `${(current / total) * 100}%`;
-                await executeClean(btn.dataset.action, btn);
-                await new Promise(r => setTimeout(r, 500)); // NAPSE-aware delay
+                await executeClean(b.dataset.action, b);
+                await new Promise(r => setTimeout(r, 500));
             }
 
             progressBar.style.width = '100%';
-            setTimeout(() => progressBar.style.width = '0%', 1000);
-            log('All operations completed', 'success');
+            btn.classList.remove('cleaning');
+            btn.classList.add('success');
+            log('=== SYSTEM OPTIMIZATION COMPLETE ===', 'success');
+            setTimeout(() => {
+                progressBar.style.width = '0%';
+                btn.classList.remove('success');
+            }, 2000);
         }
 
-        function showPage(direction) {
-            log(`Navigating ${direction}...`, 'info');
+        function toggleStreammode() {
+            streammodeActive = !streammodeActive;
+            const toggle = document.getElementById('streamToggle');
+            const container = document.getElementById('mainContainer');
+
+            if (streammodeActive) {
+                toggle.classList.add('active');
+                toggle.textContent = 'Streammode: ON';
+                container.classList.add('streammode-compact');
+                log('Streammode enabled - compact UI', 'info');
+            } else {
+                toggle.classList.remove('active');
+                toggle.textContent = 'Streammode';
+                container.classList.remove('streammode-compact');
+                log('Streammode disabled', 'info');
+            }
         }
 
-        // Auto-show console on load
+        function showPage(dir) {
+            log(`Navigating ${dir}...`, 'info');
+        }
+
+        // Auto-check server on load
+        setInterval(checkServer, 5000);
+        checkServer();
+
         log('xXx Cleaner initialized', 'info');
         log('NAPSE-aware evasion active', 'info');
-        log('Stealth mode: ON', 'success');
+        log('Waiting for engine connection...', 'warning');
     </script>
 </body>
 </html>
