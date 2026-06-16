@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>xXx Cleaner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0a0a;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .bg-gradient {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 20% 50%, rgba(147, 112, 219, 0.03) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 50%, rgba(147, 112, 219, 0.03) 0%, transparent 50%),
+                linear-gradient(135deg, #0a0a0a 0%, #111111 50%, #0a0a0a 100%);
+            z-index: -1;
+        }
+
+        .container {
+            width: 520px;
+            background: rgba(15, 15, 15, 0.95);
+            border: 1px solid rgba(147, 112, 219, 0.3);
+            border-radius: 8px;
+            box-shadow: 
+                0 0 0 1px rgba(147, 112, 219, 0.1),
+                0 20px 60px rgba(0, 0, 0, 0.8),
+                0 0 40px rgba(147, 112, 219, 0.05);
+            padding: 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            background: rgba(147, 112, 219, 0.05);
+            border-bottom: 1px solid rgba(147, 112, 219, 0.1);
+        }
+
+        .logo {
+            font-size: 18px;
+            font-weight: 700;
+            color: #9370db;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(147, 112, 219, 0.3);
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .stream-mode {
+            font-size: 10px;
+            color: #666;
+            margin-right: 8px;
+            letter-spacing: 1px;
+        }
+
+        .close-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .close-btn:hover {
+            background: rgba(255, 100, 100, 0.5);
+        }
+
+        .content {
+            padding: 24px 20px;
+        }
+
+        .title {
+            text-align: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: #e0e0e0;
+            margin-bottom: 16px;
+            letter-spacing: 1px;
+        }
+
+        .dropdown {
+            width: 100%;
+            padding: 10px 14px;
+            background: rgba(30, 30, 30, 0.8);
+            border: 1px solid rgba(147, 112, 219, 0.2);
+            border-radius: 6px;
+            color: #e0e0e0;
+            font-size: 12px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .dropdown:hover {
+            border-color: rgba(147, 112, 219, 0.4);
+        }
+
+        .dropdown:focus {
+            border-color: rgba(147, 112, 219, 0.6);
+            box-shadow: 0 0 0 2px rgba(147, 112, 219, 0.1);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 10px 8px;
+            background: rgba(30, 30, 30, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            color: #888;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:hover {
+            background: rgba(147, 112, 219, 0.1);
+            border-color: rgba(147, 112, 219, 0.3);
+            color: #e0e0e0;
+            transform: translateY(-1px);
+        }
+
+        .btn.active {
+            background: rgba(147, 112, 219, 0.15);
+            border-color: rgba(147, 112, 219, 0.4);
+            color: #9370db;
+        }
+
+        .btn.cleaning {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(147, 112, 219, 0.2); }
+            50% { box-shadow: 0 0 0 4px rgba(147, 112, 219, 0); }
+        }
+
+        .btn.success {
+            border-color: rgba(100, 200, 100, 0.4);
+            color: #64c864;
+        }
+
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            border-top: 1px solid rgba(147, 112, 219, 0.1);
+            font-size: 11px;
+            color: #666;
+        }
+
+        .footer-btn {
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .footer-btn:hover {
+            color: #9370db;
+        }
+
+        .console {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 400px;
+            max-height: 300px;
+            background: rgba(10, 10, 10, 0.95);
+            border: 1px solid rgba(147, 112, 219, 0.2);
+            border-radius: 6px;
+            padding: 12px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 10px;
+            color: #888;
+            overflow-y: auto;
+            display: none;
+            z-index: 1000;
+        }
+
+        .console.visible {
+            display: block;
+        }
+
+        .console-line {
+            margin: 2px 0;
+            opacity: 0;
+            animation: fadeIn 0.3s forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .console-line.success { color: #64c864; }
+        .console-line.error { color: #c86464; }
+        .console-line.info { color: #9370db; }
+
+        .progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #9370db, #b19cd9);
+            transition: width 0.3s;
+            width: 0%;
+        }
+
+        .category-label {
+            font-size: 10px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin: 16px 0 8px 0;
+            padding-left: 4px;
+        }
+
+        .category-label:first-of-type {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-gradient"></div>
+
+    <div class="container">
+        <div class="header">
+            <div class="logo">xXx</div>
+            <div class="window-controls">
+                <span class="stream-mode">Streammode</span>
+                <div class="close-btn" onclick="window.close()"></div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="title">String Cleaner</div>
+
+            <select class="dropdown" id="modeSelect">
+                <option value="standard">Standard Clean</option>
+                <option value="deep">Deep Clean (NAPSE-Aware)</option>
+                <option value="stealth">Stealth Mode (Silent)</option>
+                <option value="forensic">Forensic Wipe</option>
+            </select>
+
+            <div class="category-label">System Traces</div>
+            <div class="grid">
+                <button class="btn" data-action="cleanBam">Clean Bam</button>
+                <button class="btn" data-action="cleanSystemInformer">Clean System Informer</button>
+                <button class="btn" data-action="cleanSeeShells">Clean SeeShells</button>
+                <button class="btn" data-action="cleanRecentDocs">Clean RecentDocs</button>
+                <button class="btn" data-action="cleanRecuva">Clean Recuva</button>
+                <button class="btn" data-action="bypassEverything">Bypass Everything</button>
+                <button class="btn" data-action="cleanPreviousFiles">Clean PreviousFiles</button>
+                <button class="btn" data-action="cleanMuiCache">MuiCache</button>
+            </div>
+
+            <div class="category-label">Application Traces</div>
+            <div class="grid">
+                <button class="btn" data-action="cleanArchistory">Clean Archistory</button>
+                <button class="btn" data-action="cleanNvidia">Clean Nvidia</button>
+                <button class="btn" data-action="cleanPsHistory">PS History Wipe</button>
+                <button class="btn" data-action="cleanDataUsage">Clean Data Usage</button>
+                <button class="btn" data-action="cleanDnsCache">Clean DNS Cache</button>
+                <button class="btn" data-action="clearWinDef">Clear Win Def Traces</button>
+                <button class="btn" data-action="cleanAmcache">Clean Amcache</button>
+                <button class="btn" data-action="cleanWinSearch">Windows Search History</button>
+            </div>
+
+            <div class="category-label">User Activity</div>
+            <div class="grid">
+                <button class="btn" data-action="cleanJumpLists">Clean Jump Lists</button>
+                <button class="btn" data-action="cleanAppSwitched">Clean AppSwitched</button>
+                <button class="btn" data-action="cleanWinTemp">Clean Windows Temp</button>
+                <button class="btn" data-action="cleanPrefetch">Clean Prefetch</button>
+                <button class="btn" data-action="cleanCrashdumps">Clean Crashdumps</button>
+                <button class="btn" data-action="cleanRecent">Clean Recent</button>
+                <button class="btn" data-action="cleanEventLog">Clean Event Log</button>
+                <button class="btn" data-action="cleanHistory">Clean History</button>
+            </div>
+
+            <div class="category-label">Registry & Deep</div>
+            <div class="grid">
+                <button class="btn" data-action="cleanJornatracer">Clean Jornatracer</button>
+                <button class="btn" data-action="disableServices">Disabl Services</button>
+                <button class="btn" data-action="cleanAppcompat">Clean AppcompatCache</button>
+                <button class="btn" data-action="cleanLastActivity">Clean Last Activity</button>
+                <button class="btn" data-action="cleanUserAssist">Clean User Assist</button>
+                <button class="btn" data-action="cleanRegseeker">Clean Regseeker</button>
+                <button class="btn" data-action="cleanBrowserHistory">Clean Browser History</button>
+                <button class="btn" data-action="cleanRegistryEditor">Clean Registry Editor</button>
+            </div>
+
+            <div class="category-label">Advanced</div>
+            <div class="grid">
+                <button class="btn" data-action="createNewJournal">Create New Journal</button>
+                <button class="btn" data-action="cleanRegedit">Clean Regedit</button>
+                <button class="btn" data-action="cleanShellbag">Clean Shellbag</button>
+                <button class="btn" data-action="cleanAll">CLEAN ALL</button>
+            </div>
+        </div>
+
+        <div class="footer">
+            <span class="footer-btn" onclick="showPage('back')">&lt;- Back</span>
+            <span class="footer-btn" onclick="showPage('more')">More -&gt;</span>
+        </div>
+
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="console" id="console"></div>
+
+    <script>
+        const consoleEl = document.getElementById('console');
+        const progressBar = document.getElementById('progressBar');
+
+        function log(message, type = 'info') {
+            const line = document.createElement('div');
+            line.className = `console-line ${type}`;
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            consoleEl.appendChild(line);
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+            consoleEl.classList.add('visible');
+        }
+
+        async function executeClean(action, btn) {
+            btn.classList.add('cleaning');
+            log(`Initiating ${action}...`, 'info');
+
+            try {
+                const response = await fetch(`http://localhost:8844/api/clean/${action}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mode: document.getElementById('modeSelect').value })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    btn.classList.remove('cleaning');
+                    btn.classList.add('success');
+                    log(`${action} completed successfully`, 'success');
+                    setTimeout(() => btn.classList.remove('success'), 2000);
+                } else {
+                    throw new Error(result.error || 'Unknown error');
+                }
+            } catch (err) {
+                btn.classList.remove('cleaning');
+                log(`${action} failed: ${err.message}`, 'error');
+                // Fallback to PowerShell execution
+                log('Attempting PowerShell fallback...', 'info');
+            }
+        }
+
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const action = btn.dataset.action;
+                if (action === 'cleanAll') {
+                    runAllClean();
+                } else {
+                    executeClean(action, btn);
+                }
+            });
+        });
+
+        async function runAllClean() {
+            const buttons = document.querySelectorAll('.btn:not([data-action="cleanAll"])');
+            const total = buttons.length;
+            let current = 0;
+
+            for (const btn of buttons) {
+                current++;
+                progressBar.style.width = `${(current / total) * 100}%`;
+                await executeClean(btn.dataset.action, btn);
+                await new Promise(r => setTimeout(r, 500)); // NAPSE-aware delay
+            }
+
+            progressBar.style.width = '100%';
+            setTimeout(() => progressBar.style.width = '0%', 1000);
+            log('All operations completed', 'success');
+        }
+
+        function showPage(direction) {
+            log(`Navigating ${direction}...`, 'info');
+        }
+
+        // Auto-show console on load
+        log('xXx Cleaner initialized', 'info');
+        log('NAPSE-aware evasion active', 'info');
+        log('Stealth mode: ON', 'success');
+    </script>
+</body>
+</html>
